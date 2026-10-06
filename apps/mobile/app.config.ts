@@ -32,6 +32,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     predictiveBackGestureEnabled: false,
   },
+  web: { bundler: 'metro', output: 'single' },
   plugins: [
     'expo-router',
     [

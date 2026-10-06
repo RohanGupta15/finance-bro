@@ -1,8 +1,10 @@
 {
   "name": "finance-bro",
   "private": true,
-  "packageManager": "pnpm@10.6.5",
-  "engines": { "node": ">=22" },
+  "packageManager": "pnpm@12.9.1",
+  "engines": {
+    "node": "^22.13.0 || ^24.3.0 || ^26.0.0 || >=27.0.0"
+  },
   "scripts": {
     "dev": "pnpm --filter mobile start",
     "test": "turbo run test",
@@ -10,7 +12,10 @@
     "lint": "turbo run lint",
     "parser:try": "pnpm --filter @finance-bro/sms-parser try",
     "build:android:dev": "pnpm --filter mobile exec eas build -p android --profile development",
-    "build:ios:dev": "pnpm --filter mobile exec eas build -p ios --profile development"
+    "build:ios:dev": "pnpm --filter mobile exec eas build -p ios --profile development",
+    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "web": "pnpm --filter mobile exec expo start --web",
+    "build": "pnpm --filter mobile exec expo export --platform all"
   },
   "devDependencies": {
     "turbo": "2.11.7",

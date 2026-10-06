@@ -6,3 +6,22 @@ dist/
 .env*.local
 .DS_Store
 npm-debug.*
+
+# Expo and local-only artifacts
+.expo/
+apps/*/.expo/
+.impeccable/mocks/
+.impeccable/review/
+.impeccable/build/
+.impeccable/live/
+.impeccable/questions/
+.impeccable/config.local.json
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+*.p12
+*.jks
+*.mobileprovision

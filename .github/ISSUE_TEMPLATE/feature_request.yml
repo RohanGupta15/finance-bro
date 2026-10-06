@@ -1,0 +1,19 @@
+name: Feature request
+description: Suggest a user problem the app should solve.
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: Describe the need without sharing personal financial records, message or email contents, receipts, or secrets.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would help?
+    validations:
+      required: true
