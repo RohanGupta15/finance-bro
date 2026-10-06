@@ -2,7 +2,7 @@
 
 **Working repository name; final product name is undecided.**
 
-[![CI](https://github.com/RohanGupta15/finance-bro/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/RohanGupta15/finance-bro/actions/workflows/ci.yml)
+[![CI](https://github.com/Starforge-lab/finance-bro/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/Starforge-lab/finance-bro/actions/workflows/ci.yml)
 
 A mobile-first personal finance app for India, targeting Android, iOS, and web, with English and INR as initial defaults. Suvo and Rohan are building it together.
 
@@ -10,7 +10,7 @@ A mobile-first personal finance app for India, targeting Android, iOS, and web, 
 
 A frozen install, `pnpm check` (including 31 parser tests), Expo install check, Expo Doctor (20/20), and Android/iOS/web export passed locally. Browser rendering showed Home and four tab items; Home-to-Settings navigation and one synthetic SMS parse were observed. The other tabs have not had a full click-through. No physical device or signed native build has been tested. Remote CI and CodeQL results are published on pull requests; use those checks for the current revision. `pnpm audit` reported three transitive development/build-tool advisories (two high, one moderate); see [Security](SECURITY.md).
 
-Expo SDK 58 is beta and React Native 0.88 is a release candidate. Dependency versions are pinned in `pnpm-lock.yaml`. TypeScript 6.0.3 and ESLint 9.39.5 remain the current Expo-tooling-compatible versions. One upstream Worklets peer-range warning is still under review; see [issue #3](https://github.com/RohanGupta15/finance-bro/issues/3).
+Expo SDK 58 is beta and React Native 0.88 is a release candidate. Dependency versions are pinned in `pnpm-lock.yaml`. TypeScript 6.0.3 and ESLint 9.39.5 remain the current Expo-tooling-compatible versions. One upstream Worklets peer-range warning is still under review; see [issue #3](https://github.com/Starforge-lab/finance-bro/issues/3).
 
 ## Install
 
