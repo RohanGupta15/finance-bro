@@ -52,13 +52,13 @@ pnpm parser:try "Rs.450 debited from A/c XX1234 to VPA shop@ybl" --sender VM-HDF
 
 The confirmed initial finance scope is expenses and income, budgets, and bills. Required entry paths include manual entry, receipt scanning, automatic Android SMS parsing, and connected email parsing. Budgets and bills remain in scope even though the preserved Rohan proposal originally scheduled them later. None of these finance workflows currently saves records; the SMS parser and paste demo are the only related implementation.
 
-The current direction is local-only, with no app account or hosted backend. Storage and export details still need implementation. Receipt OCR, email provider and permissions, and how email import fits the local-only design remain open. Android SMS access needs native integration and user consent. iOS apps cannot read a user's general SMS inbox; the iOS message-import approach is undecided. Google Play SMS rules matter only if distributing through Google Play. Store setup is deferred.
+The current direction is local-only, with no app account or hosted backend. Storage and export details still need implementation. Receipt OCR, email provider and permissions, and how email import fits the local-only design remain open. Raw SMS and notification text must never be persisted, including unreadable messages. Android SMS and optional notification capture, and iOS Shortcuts/App Intent import, require separate device experiments and consent; they do not block the manual-first MVP. Main F-Droid is the current distribution goal; other channels and store-specific build variants are deferred. See [PRODUCT.md](PRODUCT.md) for the requirements; signing setup and publication require separate authorization.
 
 The original Rohan plan is preserved in [docs/proposals/2026-10-06-rohan-plan.md](docs/proposals/2026-10-06-rohan-plan.md) for reference. [PRODUCT.md](PRODUCT.md) records the current confirmed scope.
 
 ## Work with the maintainers
 
-Use `dev` as the integration branch and `main` for stable releases. The GitHub default-branch setting still needs owner confirmation; see the [branching guide](docs/branching.md). Read [Contributing](CONTRIBUTING.md) and [Security](SECURITY.md) before contributing. No open-source license has been chosen yet.
+Use `dev` as the integration branch and `main` for stable releases. The GitHub default-branch setting still needs owner confirmation; see the [branching guide](docs/branching.md). Read [Contributing](CONTRIBUTING.md) and [Security](SECURITY.md) before contributing. Source is licensed under [Apache-2.0](LICENSE). See [PRODUCT.md](PRODUCT.md) and [issue #25](https://github.com/Starforge-lab/finance-bro/issues/25) for the staged distribution and message-privacy direction; release paths remain unimplemented.
 
 ## Repository layout
 

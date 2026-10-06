@@ -12,13 +12,15 @@
 - packages/sms-parser is deterministic TypeScript consumed as source. Keep it independent of Expo, React Native, storage, network and wall-clock time; pass timestamps explicitly.
 - packages/config contains shared TypeScript configuration. Preserve the existing pnpm workspace rather than adding a second app or package manager.
 - The implemented app is a tab shell and paste-to-parse demo. Ledger persistence, native SMS capture, iOS App Intents, receipt OCR and connected email are future work. Ask before adding a backend, accounts, retention policies or new import providers.
-- Validate imported money as safe integer paise before accepting it; send invalid or ambiguous inputs to review. Formatting belongs at the UI edge. Future imports must preserve user corrections and avoid duplicate transactions. Read CLAUDE.md before changing matching, import or storage behavior.
+- Validate imported money as safe integer paise before accepting it; send invalid or ambiguous inputs to review. Formatting belongs at the UI edge. Future imports must preserve user corrections and avoid duplicate transactions. Read CLAUDE.md before changing matching, import or storage behavior; follow PRODUCT.md's privacy/recovery requirements and keep device secrets outside the pure parser.
 
 ## Changes and dependencies
 
 Use the pnpm version in package.json and commit pnpm-lock.yaml. For Expo dependencies, run pnpm --dir apps/mobile exec expo install <package> and consult the docs for the installed SDK major at https://docs.expo.dev/versions/v58.0.0/.
 
 Use the newest compatible releases, including the selected SDK beta. Read SECURITY.md and issue #3 before changing toolchain versions: some newer compiler/lint APIs are not yet supported. Review lockfile and build-script approval changes; preserve the explicit allowBuilds list instead of approving all dependencies.
+
+F-Droid dependency changes: read CLAUDE.md's clean source-build and transitive dependency gates before adding packages.
 
 Keep generated android/ and ios/ folders out of commits. Native configuration belongs in app.config.ts and config plugins. Changing native dependencies requires rebuilding the development client; EAS account linking, signing and paid services need explicit authorization.
 
