@@ -23,7 +23,7 @@ To run the app on a phone:
 npm install --global eas-cli
 eas login
 cd apps/mobile
-eas init                     # once: links the project to your Expo account
+# Already linked to @starforge-lab/finance-bro; your Expo account needs org access.
 cd ../..
 pnpm build:android:dev       # or build:ios:dev; install the result on your device
 pnpm dev                     # start Metro, then open the dev build
