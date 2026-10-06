@@ -4,7 +4,7 @@
 
 A mobile-first personal expense tracker for India that **logs your spending for you**. It reads bank, UPI, credit card and wallet transaction SMS on your phone and records every debit and credit automatically. You only step in to fix something.
 
-**Status:** planning complete; scaffolding not started.
+**Status:** early development. The monorepo, app shell and SMS parser core are in place; SMS capture, the ledger and the iOS intent are next.
 
 ## Why
 
@@ -49,13 +49,19 @@ Expo SDK 58 (beta) with a development build · React Native 0.88 · TypeScript �
 ```
 apps/mobile/               the Expo app (+ native modules in apps/mobile/modules)
 packages/sms-parser/       SMS → transaction rules, with anonymised fixtures
-packages/merchant-catalog/ merchant / UPI ID → category data
 packages/config/           shared tooling config
+packages/merchant-catalog/ merchant / UPI ID → category data (planned)
 ```
 
 ## Getting started
 
-Not available yet. Once scaffolding lands, setup and commands will be documented in [CONTRIBUTING.md](CONTRIBUTING.md).
+```bash
+pnpm install
+pnpm test
+pnpm parser:try "Rs.450 debited from A/c XX1234 to VPA shop@ybl" --sender VM-HDFCBK-S
+```
+
+Running the app on a phone needs a development build. See [CONTRIBUTING.md](CONTRIBUTING.md#setup).
 
 ## Contributing
 

@@ -2,7 +2,7 @@
 
 Guidance for Claude Code (and humans) working in this repo. Product context is in [README.md](README.md); workflow is in [CONTRIBUTING.md](CONTRIBUTING.md). This file records **decisions and conventions** — keep it current when a decision changes.
 
-> **Status:** planning complete, scaffolding not started. Commands below are the intended scripts; update this file if they change during scaffolding.
+> **Status:** scaffolded. Monorepo, Expo SDK 58 app shell (4 tabs) and the parser core with the generic rule are in place. Not built yet: institution rules (waiting on real samples), DB, native SMS/App Intent modules, ledger UI.
 
 ## What we're building
 
@@ -16,7 +16,7 @@ A mobile-first personal expense tracker for India. USP: it reads bank / UPI / ca
 - **expo-sqlite + Drizzle ORM** (migrations, `useLiveQuery`). The DB is the source of truth.
 - **Zustand** for small UI-only state. No React Query (there is no server).
 - **@expo/ui** native components where mature, Reanimated + haptics for motion.
-- **pnpm workspaces + Turborepo**, `node-linker=hoisted` (try isolated installs later).
+- **pnpm workspaces + Turborepo**, `node-linker=hoisted` (try isolated installs later). Turbo's auto-written `AGENTS.md` is disabled (`agentGuidance: false`); before changing Turbo config, read the docs bundled in `node_modules/turbo/docs/`, since Turbo changes between versions.
 - **Vitest** for packages, Jest + React Native Testing Library for the app. **EAS Build** for binaries.
 
 ### Expo skills — use them, don't rely on memory
@@ -38,30 +38,44 @@ We deliberately have **no project-specific skills**. Add one only when a workflo
 ## Repo layout
 
 ```
-apps/mobile/                  Expo app
-  app/                        Expo Router routes
-  src/{db,features,ui,lib}/
-  modules/sms-reader/         Kotlin local Expo module + config plugin (Android SMS)
-  modules/transaction-intent/ Swift App Intent + JavaScriptCore parser bundle (iOS)
-packages/sms-parser/          Pure TS parser: pipeline, rules/, extractors/, matching/
-  fixtures/                   Anonymised real SMS samples, one folder per institution
-packages/merchant-catalog/    Merchant / UPI VPA → default category data
-packages/config/              Shared tsconfig, eslint, prettier
+apps/mobile/                     Expo app (layout per the expo-project-structure skill)
+  app.config.ts, eas.json
+  src/app/                       Expo Router routes ONLY; each file renders a screen
+  src/screens/<name>/            Screen bodies + their private components
+  src/components/                Shared UI
+  src/constants/theme.ts         Design tokens: every colour/spacing value comes from here
+  src/hooks/
+  modules/sms-reader/            (planned) Kotlin local Expo module + config plugin
+  modules/transaction-intent/    (planned) Swift App Intent + JavaScriptCore parser bundle
+packages/sms-parser/             Pure TS parser, consumed as source (no build step)
+  src/normalise.ts, sender.ts    Canonical text; DLT header → institution
+  src/classify.ts                transaction | otp | promo | reminder | request | balance_info | unknown | other
+  src/extract/                   amount, account last4, UPI ref/VPA, direction/channel/payee
+  src/rules/                     generic.ts + per-institution files (rules/index.ts registry)
+  src/matching/                  smsDedupeKey, isSameTransaction, isTransferPair
+  fixtures/<type>/<institution>/ Anonymised samples ({ note, cases: [...] } JSON)
+  test/                          fixtures.test.ts (table-driven + rule coverage), units.test.ts
+packages/config/                 Shared tsconfig.base.json
+packages/merchant-catalog/       (planned) merchant / UPI VPA → default category data
 ```
 
-## Commands (intended)
+## Commands
 
 ```bash
 pnpm install
-pnpm dev                       # start Metro for the dev client
+pnpm dev                       # Metro for the dev client
 pnpm test                      # all tests via Turborepo
 pnpm typecheck && pnpm lint
-pnpm --filter sms-parser test  # parser only
-pnpm parser:try "<sms text>"   # print the parse result for one SMS
-pnpm parser:anonymise <file>   # scrub names/digits/VPAs from raw samples
-pnpm build:android:dev         # EAS development build (APK)
+pnpm --filter @finance-bro/sms-parser test
+pnpm parser:try "<sms text>" --sender VM-HDFCBK-S   # print classification + parse result
+pnpm build:android:dev         # EAS development build (APK); needs `eas login` + `eas init` once
 pnpm build:ios:dev             # EAS development build (internal distribution)
+cd apps/mobile && npx expo-doctor   # dependency/config health
 ```
+
+Planned: `pnpm parser:anonymise <file>`, which scrubs names, digits and VPAs from raw samples.
+
+Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com.rohangupta.financebro.dev` so a dev build and a store build can be installed side by side. `com.rohangupta.financebro` is a working id and **must be final before the first store upload**.
 
 ## Hard rules
 
@@ -83,29 +97,36 @@ pnpm build:ios:dev             # EAS development build (internal distribution)
 {sender, body, receivedAt}
  → normalise       whitespace, ₹ / Rs. / INR → one token, Indian digit grouping (1,23,456.00)
  → resolveSender   "VM-HDFCBK-S" → { institution: 'hdfc', dltSuffix: 'S' }
- → classify        transaction | otp | promo | mandate_notice | balance_info | unknown
- → institution rules in priority order (first match wins)
- → generic fallback rules (keyword + amount, low confidence → Review inbox)
- → ParseResult { kind, txn?, ruleId, ruleVersion, confidence }
+ → classify        transaction | otp | promo | reminder | request | balance_info | unknown | other
+ → institution rules for that sender, in priority order (first match wins)
+ → generic.keyword rule (extractors + direction keywords)
+ → ParseResult:
+     { kind: 'transaction', txn, ruleId, ruleVersion, confidence: 'high' | 'medium' }
+     { kind: 'review', candidate: txn | null, ruleId | null, ruleVersion | null }   → Review inbox
+     { kind: 'ignored', reason }
 ```
 
-- One file per institution: `rules/banks/<bank>.ts`, `rules/upi/<app>.ts`, `rules/cards/<issuer>.ts`, `rules/wallets/<wallet>.ts`.
-- A rule = `{ id, version, senders, pattern (named groups), build(groups) }`. Shared extractors (amount, last4, UPI ref, VPA, balance, date) are reused, not re-implemented per rule.
-- Deterministic rules/regex only. **No AI/ML.**
+- One file per institution: `rules/banks/<bank>.ts`, `rules/upi/<app>.ts`, `rules/cards/<issuer>.ts`, `rules/wallets/<wallet>.ts`, registered in `rules/index.ts`.
+- A rule = `{ id, version, institutions?, match(sms) → { txn, confidence } | null }`. Reuse the extractors in `src/extract/`; don't re-implement them per rule. Institution rules built from real samples should return `high`.
+- The generic rule returns `medium` only when the sender is a known institution (or the SMS has a UPI ref) **and** there is an anchor (last4 / VPA / ref). Otherwise it returns `low`, which becomes `review`.
+- `occurredAt` is the SMS arrival time; dates in the message body are not parsed yet.
+- Deterministic rules/regex only. **No AI/ML.** Avoid regex lookbehind; the same bundle must run in Hermes and in iOS JavaScriptCore.
 - Unknown-but-financial-looking messages go to a **Review inbox**, never silently dropped.
+- `fixtures/synthetic/` holds made-up messages that exercise the classifier and generic rule. They are not real bank formats; real anonymised samples go under `fixtures/<type>/<institution>/`.
 
 ### Edge cases (owned by the parser / `matching/`)
 
 | Case | Handling |
 |---|---|
 | OTP, promo, "pre-approved", limit offers | `classify` → ignored. `-P` DLT suffix treated as promo (verify against real samples). |
-| "Will be debited", AutoPay/mandate notices | `mandate_notice` → upcoming item, not a transaction |
-| UPI collect requests ("has requested money") | Ignored |
+| "Will be debited", AutoPay/mandate notices, bill due | `reminder` → ignored for now (upcoming-bills feature uses them later) |
+| UPI collect requests ("has requested money") | `request` → ignored |
+| Money mentioned by a person, not a bank | Low confidence → `review` |
 | Failed / declined | `status: 'failed'`, excluded from totals |
 | Refunds, reversals | `kind: 'refund' \| 'reversal'`, linked to the original via `linkedTxnId` (merchant + amount + window) |
-| Same SMS seen twice | Idempotent via `dedupeKey` (sender + body hash + time bucket) |
-| Same txn from bank + UPI app + card | Merge on UPI ref; else last4 + amount + direction within ±10 min |
-| Own-account transfers, card bill payments, wallet top-ups | Paired as `kind: 'transfer'`, excluded from spend |
+| Same SMS seen twice | Idempotent via `smsDedupeKey` (sender + body hash + 60 s bucket) |
+| Same txn from bank + UPI app + card | `isSameTransaction`: equal UPI ref; else different institutions, same amount + direction + status, compatible last4, within ±10 min. Same-institution alerts are never merged. |
+| Own-account transfers, card bill payments | `isTransferPair`: debit and credit of the same amount between two of the user's own last4s within 2 h → `kind: 'transfer'`, excluded from spend. Wallet top-ups (often no last4) still need a rule. |
 | ATM withdrawal | `kind: 'cash_withdrawal'` |
 
 ### Android SMS (`modules/sms-reader`, Kotlin)

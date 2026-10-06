@@ -2,8 +2,6 @@
 
 Thanks for helping. Read [CLAUDE.md](CLAUDE.md) first: it holds the architecture, decisions and hard rules. This file covers the workflow.
 
-> The repo is in the planning stage. Setup steps marked *(after scaffolding)* will work once the monorepo exists.
-
 ## Prerequisites
 
 - Node.js LTS and **pnpm** (`corepack enable`)
@@ -11,12 +9,20 @@ Thanks for helping. Read [CLAUDE.md](CLAUDE.md) first: it holds the architecture
 - An Expo account for **EAS Build** (iOS builds don't need a Mac)
 - Android Studio (optional, for local Android builds)
 
-## Setup *(after scaffolding)*
+## Setup
 
 ```bash
 pnpm install
-pnpm build:android:dev   # or build:ios:dev — install the dev build on your device
-pnpm dev                 # start Metro, then open the dev build
+pnpm test                # parser tests run with no device needed
+```
+
+To run the app on a phone:
+
+```bash
+npm i -g eas-cli && eas login
+cd apps/mobile && eas init   # once: links the project to your Expo account
+pnpm build:android:dev       # or build:ios:dev; install the result on your device
+pnpm dev                     # start Metro, then open the dev build
 ```
 
 This project uses a **development build**, not Expo Go. Rebuild the dev client whenever a native module, config plugin or native dependency changes.
@@ -47,27 +53,38 @@ Commits must be authored by you, under your own git identity. Don't add AI co-au
 
 This is the most common contribution.
 
-1. **Anonymise the sample** *(after scaffolding: `pnpm parser:anonymise`)*. Replace:
+1. **Anonymise the sample** (by hand for now; a `pnpm parser:anonymise` helper is planned). Replace:
    - names → `RAHUL SHARMA`-style placeholders
    - account and card digits → `XX1234`
    - VPAs → `merchant@okaxis` or `user@ybl`
    - phone numbers, UPI reference numbers and balances → fake values in the same format
 
    Keep spacing, punctuation, casing and sender ID exactly as received, because the format is what we're testing.
-2. **Add a fixture** under `packages/sms-parser/fixtures/<type>/<institution>/`:
+2. **Add a fixture** to a JSON file under `packages/sms-parser/fixtures/<type>/<institution>/` (e.g. `fixtures/banks/hdfc/upi.json`). Each file holds a `cases` array:
    ```json
    {
-     "sender": "VM-HDFCBK-S",
-     "body": "…anonymised text…",
-     "receivedAt": "2026-10-06T10:15:00+05:30",
-     "expected": { "kind": "transaction", "direction": "debit", "amountPaise": 45000, "accountLast4": "1234", "channel": "upi", "upiRef": "123456789012", "counterparty": "SWIGGY" }
+     "note": "Where these samples came from (e.g. 'HDFC savings, received Oct 2026').",
+     "cases": [
+       {
+         "name": "UPI debit to merchant VPA",
+         "sender": "VM-HDFCBK-S",
+         "body": "…anonymised text…",
+         "receivedAt": "2026-10-06T10:15:00+05:30",
+         "expected": {
+           "kind": "transaction",
+           "ruleId": "hdfc.upi.debit",
+           "confidence": "high",
+           "txn": { "amountPaise": 45000, "direction": "debit", "accountLast4": "1234", "channel": "upi", "upiRef": "123456789012" }
+         }
+       }
+     ]
    }
    ```
-   Also add **negative fixtures** for look-alikes from the same sender: OTP, promo, failed, mandate notice and collect request.
+   `txn` is a partial match, so list only the fields you care about. Other expected shapes are `{ "kind": "ignored", "reason": "otp" }` and `{ "kind": "review", "ruleId": null }`. Also add **negative fixtures** for look-alikes from the same sender: OTP, promo, failed, reminder and collect request. Every `*.json` under `fixtures/` is picked up by `test/fixtures.test.ts` automatically.
 3. **Run the tests** and confirm the new fixture fails (or passes for the wrong reason).
-4. **Write or extend the rule** in `rules/<type>/<institution>.ts`. Reuse shared extractors. If you change an existing rule's behaviour, bump its `version`.
+4. **Write or extend the rule** in `src/rules/<type>/<institution>.ts` and register it in `src/rules/index.ts`. Reuse the extractors in `src/extract/`. If you change an existing rule's behaviour, bump its `version`.
 5. **Run all parser tests.** Every fixture must pass, and every rule needs at least one positive fixture.
-6. Try it manually: `pnpm parser:try "<sms>"`.
+6. Try it manually: `pnpm parser:try "<sms>" --sender VM-HDFCBK-S`.
 
 **Never commit an un-anonymised SMS**, including in issues, PR descriptions or test names.
 
