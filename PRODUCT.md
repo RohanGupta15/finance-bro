@@ -20,12 +20,13 @@ Help people in India track personal expenses and income, manage budgets and bill
 
 ## Operating Context
 
-Mobile use is primary, with Android, iOS, and web support. Suvo can test on a Motorola Edge 60 Pro; Rohan has an iPhone. The user asked to settle visual directions before implementing custom finance screens. The current UI is a minimal shell and parser demo.
+Mobile use is primary, with Android, iOS, and web support. Suvo can test on a Motorola Edge 60 Pro; Rohan has an iPhone. Rohan is taking design; approved visual directions are required before implementing custom finance screens. The current UI is a minimal shell and parser demo.
 
 ## Capabilities and Constraints
 
 - Confirmed initial scope: expenses and income, budgets, and bills. Manual entry, receipt scanning, automatic Android SMS parsing, and connected email parsing are confirmed entry requirements. Budget and bill workflows remain in scope even though the preserved Rohan proposal schedules them later.
 - Current implementation: Expo Router tabs with a simple home screen, paste-to-parse SMS demonstration, placeholder Insights/Budgets/Settings screens, and a pure TypeScript parser that returns transaction, review, or ignored results. There is no persisted ledger or CRUD, native SMS capture, receipt OCR, or email integration.
+- Agreed delivery sequence (Suvo, 2026-10-06): the first usable MVP is manual-first, with a local ledger, expense/income CRUD, monthly totals, simple monthly category budgets, bill due/paid tracking, reviewed paste-to-import SMS, and CSV export. Automatic SMS is a later optional import and does not block this milestone. Android/iOS feasibility experiments run alongside ledger work. Receipt OCR, connected email and encrypted backup/restore follow separately; they are not removed from the product direction. See [the MVP roadmap](docs/mvp-roadmap.md).
 - Current architecture direction: local-only financial data with no app accounts or hosted backend. Storage, export, backup, and retention details need implementation. The email provider, requested permissions, and a local-only connection flow are undecided.
 - One upstream Worklets peer-range warning remains under review, tracked in [issue #3](https://github.com/RohanGupta15/finance-bro/issues/3), despite the Expo install check and Expo Doctor passing.
 - Android SMS access needs native integration and user consent. iOS does not let apps read a user's general SMS inbox; an iOS import path is undecided. Google Play SMS permission policy is relevant only if distributing through Google Play. Store setup is deferred. See [Google Play SMS and Call Log permissions](https://support.google.com/googleplay/android-developer/answer/10208820) and [Apple SMS filtering](https://developer.apple.com/documentation/identitylookup/sms-and-mms-message-filtering).

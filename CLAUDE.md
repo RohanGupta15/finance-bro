@@ -6,7 +6,7 @@ Guidance for Claude Code (and humans) working in this repo. Product context is i
 
 ## What we're building
 
-A mobile-first personal expense tracker for India. USP: it reads bank / UPI / card / wallet transaction SMS on-device and logs debits and credits automatically. Users can still add, edit, delete and re-categorise anything manually. Effortless, minimal taps, no setup friction. Working name `finance-bro`; the product name is decided after v1.
+A mobile-first personal expense tracker for India. The first usable MVP is manual-first with reviewed paste-to-import SMS; automatic on-device bank / UPI / card / wallet SMS logging follows validated native experiments. Users can add, edit, delete and re-categorise transactions without message permissions. Working name `finance-bro`; the product name is decided after v1. See [the agreed MVP roadmap](docs/mvp-roadmap.md).
 
 ## Stack
 
@@ -131,6 +131,8 @@ Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com
 
 ### Android SMS (`modules/sms-reader`, Kotlin)
 
+Planned after the manual-first MVP; validate these assumptions in the bounded Android experiment before building the full pipeline.
+
 - Permissions `RECEIVE_SMS`, `READ_SMS`, `POST_NOTIFICATIONS` are added by the module's config plugin.
 - Manifest `BroadcastReceiver` for `SMS_RECEIVED` (works when the app is killed). It pre-filters cheaply on sender/keywords and enqueues the message reference.
 - A **Headless JS** task runs the TS parser immediately and posts a notification ("₹450 · Swiggy · Food — tap to change"). *Unproven on the New Architecture → spike first; fallback is draining the queue on app open.*
@@ -138,6 +140,8 @@ Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com
 - JS API: `requestPermission()`, `queryInbox({ sinceId, limit })`, `drainQueue()`, `onSms` event.
 
 ### iOS (`modules/transaction-intent`, Swift)
+
+Proposed implementation, not a demonstrated capability or MVP prerequisite. Validate the automation, background execution and storage access on a real iPhone first; fall back to manual entry and paste if it is not viable.
 
 - App Intent `LogTransactionFromSMS(text: String)`, `openAppWhenRun = false`, returns a confirmation dialog ("Logged ₹450 · Swiggy").
 - **Parsing runs inside the intent** using the same `sms-parser` compiled to a single JS bundle and executed in `JavaScriptCore`. One parser, both platforms. The intent writes to the app's SQLite DB.
@@ -184,14 +188,14 @@ Inspired by [Sushi](https://github.com/jerameel/sushi) — inspiration, not a te
 
 The confirmed initial finance workflows include expenses/income, budgets and bills; see PRODUCT.md. Receipt scanning and connected email are confirmed later entry requirements; providers and their fit with the local-only design remain open. The existing code is a parser and shell, not this full roadmap.
 
-- **v1 (MVP):** monorepo + parser (~10 major banks, GPay/PhonePe/Paytm, the maintainer's cards/wallets) with fixtures; Android live capture + catch-up + 90-day backfill; dedupe/transfer/refund/failed handling; manual add/edit/delete/re-categorise; merchant auto-categorisation that learns; Home feed, month summary, category breakdown; Review inbox; app lock; iOS App Intent (JSC parser) + Shortcuts onboarding + paste; CSV export; Play `play`/`sideload` flavours.
-- **v1.1:** encrypted backup/restore, home-screen widget, iOS share extension.
-- **v2:** advanced recurring detection, insights, search/filters, tags, split entries, custom category tree.
+- **First usable MVP (approved by Suvo, 2026-10-06):** local ledger and categories; manual expense/income add/edit/delete/re-categorise; Home feed and monthly totals; reviewed paste-to-import SMS with duplicate protection and preserved corrections; monthly category budgets; bill due dates and paid/unpaid tracking; CSV export. Works without SMS permission. Custom UI follows Rohan's approved designs. This is an implementation milestone, not authorization for store publishing.
+- **Automatic imports:** run Android/iOS feasibility experiments alongside ledger work, then implement proven paths as optional imports. Institution rules require anonymised samples and fixtures. Full native capture, backfill, Shortcuts onboarding and distribution flavours are not MVP blockers.
+- **Later capabilities:** receipt OCR, connected email and encrypted backup/restore after relevant provider/privacy decisions; merchant learning, app lock, category breakdown, home-screen widget, iOS share extension, advanced recurring detection, insights, search/filters, tags, split entries and custom category tree remain planned. Scheduling and release hardening are separate from this milestone.
 - **Out of scope:** user accounts, backend sync, Account Aggregator / bank linking, AI/ML, investments, bill-splitting with friends, multi-currency, ads.
 
 ## Known risks
 
-- SDK 58 beta / RN 0.88 RC: third-party lag (Drizzle expo-sqlite driver, Reanimated, `@expo/ui`), EAS image changes. Spike Headless JS (Android) and JSC-in-App-Intent (iOS) in week 1.
+- SDK 58 beta / RN 0.88 RC: third-party lag (Drizzle expo-sqlite driver, Reanimated, `@expo/ui`), EAS image changes. Spike Headless JS (Android) and JSC-in-App-Intent (iOS) alongside ledger work; no calendar estimate is agreed.
 - Play may deny SMS permissions → `play` flavour must stand on its own.
 - Bank SMS formats change without notice → Review inbox + fixture-driven rules.
 - iOS: verify on a real device that messages filtered into "Transactions"/"Unknown Senders" still trigger the automation.

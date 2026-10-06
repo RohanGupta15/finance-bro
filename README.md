@@ -56,6 +56,8 @@ The current direction is local-only, with no app account or hosted backend. Stor
 
 The original Rohan plan is preserved in [docs/proposals/2026-10-06-rohan-plan.md](docs/proposals/2026-10-06-rohan-plan.md) for reference. [PRODUCT.md](PRODUCT.md) records the current confirmed scope.
 
+The [agreed MVP roadmap](docs/mvp-roadmap.md) sequences a manual-first local ledger, budgets, bills, reviewed paste import and CSV export. Rohan handles design. Automatic SMS experiments run alongside ledger work; native imports do not block the first usable MVP.
+
 ## Work with the maintainers
 
 Use `dev` as the integration branch and `main` for stable releases. The GitHub default-branch setting still needs owner confirmation; see the [branching guide](docs/branching.md). Read [Contributing](CONTRIBUTING.md) and [Security](SECURITY.md) before contributing. No open-source license has been chosen yet.
