@@ -2,7 +2,7 @@
 
 Guidance for Claude Code (and humans) working in this repo. Product context is in [README.md](README.md); workflow is in [CONTRIBUTING.md](CONTRIBUTING.md). This file records **decisions and conventions** — keep it current when a decision changes.
 
-> **Status:** scaffolded. Monorepo, Expo SDK 58 app shell (4 tabs) and the parser core with the generic rule are in place. Not built yet: institution rules (waiting on real samples), DB, native SMS/App Intent modules, ledger UI.
+> **Status:** Expo app shell and generic SMS parser, plus the local ledger storage foundation. Ledger screens and save flows are not yet connected. Institution rules, native SMS/App Intent modules and ledger UI remain planned.
 
 ## What we're building
 
@@ -13,11 +13,11 @@ A mobile-first personal expense tracker for India. USP: it reads bank / UPI / ca
 - **Expo SDK 58 (beta)**, React Native 0.88 RC, TypeScript (strict), New Architecture only.
 - **Development build** via `expo-dev-client` — never Expo Go (we ship custom native code).
 - **Expo Router** (tabs: Home, Insights, Budgets, Settings; add/edit as modal sheets).
-- Planned **expo-sqlite + Drizzle ORM** (migrations, `useLiveQuery`). The DB is the source of truth.
+- **expo-sqlite + Drizzle ORM** for the local ledger, with generated migrations. The DB is the source of truth; `useLiveQuery` integration remains planned.
 - Planned **Zustand** for small UI-only state. No React Query (there is no server).
 - **@expo/ui** native components where mature, Reanimated + haptics for motion.
 - **pnpm workspaces + Turborepo**, `node-linker=hoisted` (try isolated installs later). Turbo's auto-written `AGENTS.md` is disabled (`agentGuidance: false`); before changing Turbo config, read the docs bundled in `node_modules/turbo/docs/`, since Turbo changes between versions.
-- **Vitest** for packages; Jest + React Native Testing Library are planned for app tests. **EAS Build** for binaries.
+- **Vitest** for packages and **node:test + node:sqlite** for ledger persistence/migration checks. Jest + React Native Testing Library are planned for screen tests. **EAS Build** for binaries.
 
 ### Expo skills — use them, don't rely on memory
 

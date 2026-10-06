@@ -1,0 +1,102 @@
+import { sql } from 'drizzle-orm';
+import {
+  check,
+  integer,
+  sqliteTable,
+  text,
+} from 'drizzle-orm/sqlite-core';
+import type { AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
+
+export const accountTypes = ['bank', 'credit_card', 'wallet', 'upi_lite', 'cash'] as const;
+export const transactionDirections = ['debit', 'credit'] as const;
+export const transactionKinds = [
+  'expense',
+  'income',
+  'transfer',
+  'refund',
+  'reversal',
+  'cash_withdrawal',
+] as const;
+export const transactionStatuses = ['posted', 'failed', 'pending'] as const;
+export const transactionSources = ['sms', 'manual', 'ios_intent', 'paste'] as const;
+export const categoryKinds = ['expense', 'income'] as const;
+
+export const accounts = sqliteTable(
+  'accounts',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    institution: text('institution'),
+    type: text('type', { enum: accountTypes }).notNull(),
+    last4: text('last4'),
+    isOwn: integer('is_own', { mode: 'boolean' }).notNull().default(true),
+    archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
+  },
+  (table) => [
+    check('accounts_type_check', sql`${table.type} in ('bank', 'credit_card', 'wallet', 'upi_lite', 'cash')`),
+  ],
+);
+
+export const categories = sqliteTable(
+  'categories',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    icon: text('icon'),
+    color: text('color'),
+    parentId: text('parent_id').references((): AnySQLiteColumn => categories.id, { onDelete: 'set null' }),
+    kind: text('kind', { enum: categoryKinds }).notNull(),
+    isSystem: integer('is_system', { mode: 'boolean' }).notNull().default(false),
+    sortOrder: integer('sort_order').notNull().default(0),
+  },
+  (table) => [
+    check('categories_kind_check', sql`${table.kind} in ('expense', 'income')`),
+  ],
+);
+
+export const transactions = sqliteTable(
+  'transactions',
+  {
+    id: text('id').primaryKey(),
+    amountPaise: integer('amount_paise').notNull(),
+    direction: text('direction', { enum: transactionDirections }).notNull(),
+    kind: text('kind', { enum: transactionKinds }).notNull(),
+    status: text('status', { enum: transactionStatuses }).notNull().default('posted'),
+    accountId: text('account_id').references(() => accounts.id, { onDelete: 'set null' }),
+    counterparty: text('counterparty'),
+    merchantId: text('merchant_id'),
+    categoryId: text('category_id').references(() => categories.id, { onDelete: 'set null' }),
+    occurredAt: integer('occurred_at', { mode: 'timestamp_ms' }).notNull(),
+    note: text('note'),
+    source: text('source', { enum: transactionSources }).notNull(),
+    smsRefId: text('sms_ref_id'),
+    upiRef: text('upi_ref'),
+    dedupeKey: text('dedupe_key'),
+    linkedTxnId: text('linked_txn_id').references((): AnySQLiteColumn => transactions.id, { onDelete: 'set null' }),
+    excludeFromStats: integer('exclude_from_stats', { mode: 'boolean' }).notNull().default(false),
+    userEdited: integer('user_edited', { mode: 'boolean' }).notNull().default(false),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
+    deletedAt: integer('deleted_at', { mode: 'timestamp_ms' }),
+  },
+  (table) => [
+    check(
+      'transactions_amount_paise_check',
+      sql`typeof(${table.amountPaise}) = 'integer' and ${table.amountPaise} between 1 and 9007199254740991`,
+    ),
+    check('transactions_direction_check', sql`${table.direction} in ('debit', 'credit')`),
+    check(
+      'transactions_kind_check',
+      sql`${table.kind} in ('expense', 'income', 'transfer', 'refund', 'reversal', 'cash_withdrawal')`,
+    ),
+    check('transactions_status_check', sql`${table.status} in ('posted', 'failed', 'pending')`),
+    check('transactions_source_check', sql`${table.source} in ('sms', 'manual', 'ios_intent', 'paste')`),
+    check('transactions_occurred_at_check', sql`typeof(${table.occurredAt}) = 'integer'`),
+    check('transactions_created_at_check', sql`typeof(${table.createdAt}) = 'integer'`),
+    check('transactions_updated_at_check', sql`typeof(${table.updatedAt}) = 'integer'`),
+    check(
+      'transactions_deleted_at_check',
+      sql`${table.deletedAt} is null or typeof(${table.deletedAt}) = 'integer'`,
+    ),
+  ],
+);
