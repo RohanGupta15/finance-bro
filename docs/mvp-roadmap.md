@@ -34,6 +34,12 @@ Rohan owns design. Implementation issues remain unassigned until a maintainer pi
 
 Each issue defines acceptance criteria and validation. Native experiments may use isolated fictional data before the ledger is ready; integrating automatic writes depends on the shared storage contract. Keep provider decisions under the existing import umbrella [#5](https://github.com/RohanGupta15/finance-bro/issues/5), toolchain advisories under [#3](https://github.com/RohanGupta15/finance-bro/issues/3), and owner-only repository settings under [#2](https://github.com/RohanGupta15/finance-bro/issues/2).
 
+## Shared Expo project and builds
+
+Suvo confirmed that the shared Expo project and build history will belong to Rohan's planned Expo organization. The organization does not exist yet. Rohan creates it and invites Suvo; after Suvo accepts, verify access and link the app to the intended organization-owned project. Keep subsequent builds under that project. Organization creation, invitation acceptance and project selection are prerequisites for shared EAS build setup.
+
+Suvo's local Expo login is verified as `suvodeep12`. A personal `@suvodeep12/finance-bro` project was created during setup before the organization decision was clarified; its local app link was removed. It is unused, not the shared build destination. No build was started and no signing was configured.
+
 ## Deliberate scope boundaries
 
 - The first MVP includes expenses/income, simple monthly category budgets and bills. Budget rollover, recurring bill generation, scheduled notifications and automatic paid detection are later work. Marking a bill paid does not silently add a transaction.

@@ -22,6 +22,8 @@ Help people in India track personal expenses and income, manage budgets and bill
 
 Mobile use is primary, with Android, iOS, and web support. Suvo can test on a Motorola Edge 60 Pro; Rohan has an iPhone. Rohan is taking design; approved visual directions are required before implementing custom finance screens. The current UI is a minimal shell and parser demo.
 
+The shared Expo project and builds will belong to Rohan's planned Expo organization. It has not been created yet; organization access and project linking must be verified before shared build setup. This build-service account is separate from the app's local-only financial data architecture.
+
 ## Capabilities and Constraints
 
 - Confirmed initial scope: expenses and income, budgets, and bills. Manual entry, receipt scanning, automatic Android SMS parsing, and connected email parsing are confirmed entry requirements. Budget and bill workflows remain in scope even though the preserved Rohan proposal schedules them later.

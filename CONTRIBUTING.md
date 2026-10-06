@@ -23,13 +23,15 @@ To run the app on a phone:
 npm install --global eas-cli
 eas login
 cd apps/mobile
-eas init                     # once: links the project to your Expo account
+eas init                     # once: link the intended shared organization project
 cd ../..
 pnpm build:android:dev       # or build:ios:dev; install the result on your device
 pnpm dev                     # start Metro, then open the dev build
 ```
 
 This project uses a **development build**, not Expo Go. Rebuild the dev client whenever a native module, config plugin or native dependency changes.
+
+The shared Expo project and builds will belong to Rohan's planned organization. Wait for organization creation and your accepted invitation, verify access, then link the intended organization project. Keep both maintainers on that project rather than creating personal build destinations. See [the roadmap's build setup status](docs/mvp-roadmap.md#shared-expo-project-and-builds).
 
 ## Workflow
 
