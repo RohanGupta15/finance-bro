@@ -1,72 +1,67 @@
 # finance-bro
 
-> Working name. The product name will be decided after v1.
+**Working repository name; final product name is undecided.**
 
-A mobile-first personal expense tracker for India that **logs your spending for you**. It reads bank, UPI, credit card and wallet transaction SMS on your phone and records every debit and credit automatically. You only step in to fix something.
+[![CI](https://github.com/RohanGupta15/finance-bro/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/RohanGupta15/finance-bro/actions/workflows/ci.yml)
 
-**Status:** early development. The monorepo, app shell and SMS parser core are in place; SMS capture, the ledger and the iOS intent are next.
+A mobile-first personal finance app for India, targeting Android, iOS, and web, with English and INR as initial defaults. Suvo and Rohan are building it together.
 
-## Why
+**Status:** Early development. The pnpm monorepo contains an Expo Router app shell, a paste-to-parse SMS demo, and a pure TypeScript SMS parser package. There is no saved transaction ledger, automatic SMS capture, receipt scanning, or connected email integration yet.
 
-Expense trackers fail because logging is a chore. In India almost every payment (UPI, card, netbanking, wallet) already produces an SMS. This app turns those messages into a clean ledger with no setup and no bank linking.
+A frozen install, `pnpm check` (including 31 parser tests), Expo install check, Expo Doctor (20/20), and Android/iOS/web export passed locally. Browser rendering showed Home and four tab items; Home-to-Settings navigation and one synthetic SMS parse were observed. The other tabs have not had a full click-through. No physical device or signed native build has been tested. Remote CI and CodeQL results are published on pull requests; use those checks for the current revision. `pnpm audit` reported three transitive development/build-tool advisories (two high, one moderate); see [Security](SECURITY.md).
 
-## Features
+Expo SDK 58 is beta and React Native 0.88 is a release candidate. Dependency versions are pinned in `pnpm-lock.yaml`. TypeScript 6.0.3 and ESLint 9.39.5 remain the current Expo-tooling-compatible versions. One upstream Worklets peer-range warning is still under review; see [issue #3](https://github.com/RohanGupta15/finance-bro/issues/3).
 
-**v1**
-- Automatic logging from transaction SMS on Android, including in the background, plus a one-time import of the last 90 days
-- iOS: a "Log transaction from SMS" App Intent, triggered by a one-time Shortcuts automation, with a paste fallback
-- One-tap category fixes from a notification; swipe to edit or delete
-- Merchant auto-categorisation (Swiggy, Zomato, Uber, BigBasket, …) that learns from your corrections
-- Correct totals: transfers between your own accounts, card bill payments and wallet top-ups don't count as spending; refunds link to the original purchase; failed transactions are excluded; duplicate SMS are merged
-- A Review inbox for messages that look financial but weren't recognised
-- Fast manual entry: amount, category, save
-- Month summary and category breakdown, biometric app lock, CSV export
+## Install
 
-**Later:** budgets, encrypted backup, home-screen widget, iOS share extension (v1.1); recurring payment detection, insights, search and filters (v2).
+Use Node.js 22.13 or newer in the 22.x line (the package also accepts Node 24.3+, 26.x, and 27+) and the repository-pinned pnpm 12.9.1:
 
-**Deliberately not included:** accounts or sign-in, a backend, bank linking, AI/ML, investments, ads.
-
-## Privacy
-
-- Everything is parsed **on your device**. There is no server.
-- SMS are **read only**. The app never sends, deletes or changes a message, and it does not copy message text into its database. Unrecognised messages are held only until you review them.
-- Nothing leaves your phone unless you export it yourself.
-
-## Platforms and distribution
-
-| | How transactions arrive | Distribution |
-|---|---|---|
-| Android (Play Store) | SMS, if Google approves the SMS permission declaration; otherwise manual entry, paste and share | Google Play |
-| Android (sideload) | SMS, automatic and in the background | APK on GitHub Releases |
-| iOS | Shortcuts automation → App Intent, or paste | App Store |
-
-Google Play restricts SMS permissions, so the app is built to work fully without them. See [CLAUDE.md](CLAUDE.md#store-distribution-play-store--app-store-sms-may-be-denied) for details.
-
-## Tech
-
-Expo SDK 58 (beta) with a development build · React Native 0.88 · TypeScript · Expo Router · expo-sqlite + Drizzle · pnpm workspaces + Turborepo · local Expo modules in Kotlin (SMS) and Swift (App Intent). The SMS parser is a separate, pure-TypeScript package with fixture-driven tests.
-
-```
-apps/mobile/               the Expo app (+ native modules in apps/mobile/modules)
-packages/sms-parser/       SMS → transaction rules, with anonymised fixtures
-packages/config/           shared tooling config
-packages/merchant-catalog/ merchant / UPI ID → category data (planned)
+```sh
+corepack enable
+pnpm install --frozen-lockfile
 ```
 
-## Getting started
+## Run
 
-```bash
-pnpm install
-pnpm test
+The mobile app starts in development-client mode. Install a matching Android or iOS development build first; see [Contributing](CONTRIBUTING.md) for EAS setup.
+
+```sh
+pnpm build:android:dev  # or pnpm build:ios:dev
+pnpm dev
+```
+
+To run the web app:
+
+```sh
+pnpm web
+```
+
+The SDK 58 beta needs a compatible Expo Go or development client. For a physical iPhone, the beta's EAS Go path uses TestFlight and requires an active Apple Developer Program membership. This project has not been tested on a phone. See [Expo's SDK 58 beta guide](https://expo.dev/changelog/sdk-58-beta) and [iOS device setup](https://docs.expo.dev/get-started/set-up-your-environment/?device=physical&mode=expo-go&platform=ios).
+
+## Check and build
+
+```sh
+pnpm check
+pnpm build
 pnpm parser:try "Rs.450 debited from A/c XX1234 to VPA shop@ybl" --sender VM-HDFCBK-S
 ```
 
-Running the app on a phone needs a development build. See [CONTRIBUTING.md](CONTRIBUTING.md#setup).
+`pnpm check` runs type checking, lint, and tests. `pnpm build` exports Android, iOS, and web bundles; it does not install or verify a native app. Use only fictional or anonymized message text in parser examples and tests.
 
-## Contributing
+## Product scope
 
-The most valuable contribution is **an SMS format we don't recognise yet**. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to anonymise and submit samples.
+The confirmed initial finance scope is expenses and income, budgets, and bills. Required entry paths include manual entry, receipt scanning, automatic Android SMS parsing, and connected email parsing. Budgets and bills remain in scope even though the preserved Rohan proposal originally scheduled them later. None of these finance workflows currently saves records; the SMS parser and paste demo are the only related implementation.
 
-## Acknowledgements
+The current direction is local-only, with no app account or hosted backend. Storage and export details still need implementation. Receipt OCR, email provider and permissions, and how email import fits the local-only design remain open. Android SMS access needs native integration and user consent. iOS apps cannot read a user's general SMS inbox; the iOS message-import approach is undecided. Google Play SMS rules matter only if distributing through Google Play. Store setup is deferred.
 
-UX inspired by [Sushi – Personal Finance](https://github.com/jerameel/sushi).
+The original Rohan plan is preserved in [docs/proposals/2026-10-06-rohan-plan.md](docs/proposals/2026-10-06-rohan-plan.md) for reference. [PRODUCT.md](PRODUCT.md) records the current confirmed scope.
+
+## Work with the maintainers
+
+Use `dev` as the integration branch and `main` for stable releases. The GitHub default-branch setting still needs owner confirmation; see the [branching guide](docs/branching.md). Read [Contributing](CONTRIBUTING.md) and [Security](SECURITY.md) before contributing. No open-source license has been chosen yet.
+
+## Repository layout
+
+- `apps/mobile/` — Expo app
+- `packages/sms-parser/` — deterministic SMS normalization, classification, and transaction extraction
+- `packages/config/` — shared TypeScript configuration

@@ -1,0 +1,40 @@
+name: Bug report
+description: Report a problem that can be reproduced.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: Use fictional data to reproduce the issue. Never include real financial records, message or email contents, receipts, or secrets.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Android
+        - iOS
+        - Web
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and OS version
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: Use fictional accounts and amounts.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true

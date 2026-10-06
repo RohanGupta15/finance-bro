@@ -1,0 +1,10 @@
+{
+  "allow_merge_commit": true,
+  "allow_squash_merge": true,
+  "allow_rebase_merge": false,
+  "delete_branch_on_merge": true,
+  "default_branch": "dev",
+  "description": "Personal finance tracking for India: Expo SDK 58 for Android, iOS and web",
+  "has_issues": true,
+  "has_projects": true
+}

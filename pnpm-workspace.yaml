@@ -1,3 +1,11 @@
 packages:
   - apps/*
   - packages/*
+
+# Deliberate bleeding-edge policy: allow newly published SDK beta dependencies.
+# Frozen lockfiles and reviewed updates remain required.
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true
+
+minimumReleaseAge: 0

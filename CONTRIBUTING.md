@@ -4,7 +4,7 @@ Thanks for helping. Read [CLAUDE.md](CLAUDE.md) first: it holds the architecture
 
 ## Prerequisites
 
-- Node.js LTS and **pnpm** (`corepack enable`)
+- Node.js 22 or newer and **pnpm**, pinned in the root `packageManager` field (currently 12.9.1; run `corepack enable`)
 - An Android phone and/or iPhone. SMS capture and App Intents need real devices; emulators can't fully test them.
 - An Expo account for **EAS Build** (iOS builds don't need a Mac)
 - Android Studio (optional, for local Android builds)
@@ -12,15 +12,19 @@ Thanks for helping. Read [CLAUDE.md](CLAUDE.md) first: it holds the architecture
 ## Setup
 
 ```bash
-pnpm install
+corepack enable
+pnpm install --frozen-lockfile
 pnpm test                # parser tests run with no device needed
 ```
 
 To run the app on a phone:
 
 ```bash
-npm i -g eas-cli && eas login
-cd apps/mobile && eas init   # once: links the project to your Expo account
+npm install --global eas-cli
+eas login
+cd apps/mobile
+eas init                     # once: links the project to your Expo account
+cd ../..
 pnpm build:android:dev       # or build:ios:dev; install the result on your device
 pnpm dev                     # start Metro, then open the dev build
 ```
@@ -29,11 +33,22 @@ This project uses a **development build**, not Expo Go. Rebuild the dev client w
 
 ## Workflow
 
-1. Open or pick an issue. For parser work, have the SMS sample ready (anonymised).
-2. Branch from `main`: `feat/…`, `fix/…`, `parser/<institution>-…`, `chore/…`.
+1. Open or pick an issue. For parser work, use an anonymised SMS sample.
+2. Create a short-lived branch from the default `dev` branch: `feat/…`, `fix/…`, `parser/<institution>-…`, or `chore/…`. See the [branching guide](docs/branching.md) for PR targets and release syncs.
 3. Write a failing test first for parser and matching logic.
-4. Run `pnpm typecheck && pnpm lint && pnpm test` before pushing.
+4. Run the checks below before pushing.
 5. Open a PR using the checklist below.
+
+```bash
+pnpm check
+pnpm --dir apps/mobile exec expo install --check
+pnpm --dir apps/mobile dlx expo-doctor
+pnpm build
+```
+
+The workspace intentionally sets `minimumReleaseAge: 0` so newly published SDK beta dependencies are available immediately. Treat that as a bleeding-edge choice, not a stability guarantee. Use `pnpm --dir apps/mobile exec expo install <package>` for Expo or React Native dependencies, review lockfile changes, and run the checks above. Dependabot changes are proposals; review and test them before merging.
+
+GitHub's [Dependabot ecosystem reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference) currently lists pnpm support through v10, so compatibility with this repo's pnpm 12 toolchain is unconfirmed. The npm/pnpm entry remains configured; check Dependabot's update logs before relying on JavaScript dependency update PRs. GitHub Actions updates use a separate supported entry.
 
 ### Commits
 
@@ -102,11 +117,13 @@ This is the most common contribution.
 
 ## Pull request checklist
 
-- [ ] `pnpm typecheck`, `pnpm lint` and `pnpm test` pass
+- [ ] `pnpm check` passes (typecheck, lint and tests)
+- [ ] `pnpm --dir apps/mobile exec expo install --check`, `pnpm --dir apps/mobile dlx expo-doctor` and `pnpm build` pass
 - [ ] Parser changes include positive and negative fixtures; all samples are anonymised
 - [ ] No new network calls involving user data (or explicit opt-in consent is in place)
 - [ ] The app still works with SMS permission denied
 - [ ] Native changes were tested on a real device (device and OS listed)
+- [ ] Screenshots and examples use fictional financial data only
 - [ ] CLAUDE.md is updated if a decision or convention changed
 
 ## Reporting an unrecognised SMS

@@ -32,6 +32,7 @@ export function Home() {
   const colors = useTheme();
   const [text, setText] = useState('');
   const [result, setResult] = useState<ParseResult | null>(null);
+  const isReadDisabled = !text.trim();
 
   return (
     <ThemedView style={styles.container}>
@@ -46,6 +47,7 @@ export function Home() {
             value={text}
             onChangeText={setText}
             placeholder="Paste an SMS"
+            accessibilityLabel="Paste a bank SMS"
             placeholderTextColor={colors.textSecondary}
             multiline
             style={[styles.input, { color: colors.text, backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
@@ -53,9 +55,10 @@ export function Home() {
 
           <Pressable
             accessibilityRole="button"
-            disabled={!text.trim()}
+            accessibilityState={{ disabled: isReadDisabled }}
+            disabled={isReadDisabled}
             onPress={() => setResult(parseSms({ sender: 'PASTE', body: text, receivedAt: Date.now() }))}
-            style={({ pressed }) => [styles.button, { backgroundColor: colors.accent, opacity: !text.trim() ? 0.4 : pressed ? 0.8 : 1 }]}>
+            style={({ pressed }) => [styles.button, { backgroundColor: colors.accent, opacity: isReadDisabled ? 0.4 : pressed ? 0.8 : 1 }]}>
             <ThemedText themeColor="onAccent" style={styles.buttonLabel}>Read message</ThemedText>
           </Pressable>
 
