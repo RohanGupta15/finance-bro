@@ -1,0 +1,140 @@
+{
+  "note": "Synthetic messages written to exercise the generic rule and classifier. They imitate common Indian alert shapes but are NOT copies of any bank's real format. Replace/extend with anonymised real samples under fixtures/<type>/<institution>/.",
+  "cases": [
+    {
+      "name": "UPI debit to a VPA with ref",
+      "sender": "VM-HDFCBK-S",
+      "body": "INR 450.00 debited from A/c XX1234 on 06-10-26 to VPA swiggy@axisbank (UPI Ref No 612345678901). Not you? Call 1800000000",
+      "receivedAt": "2026-10-06T13:05:00+05:30",
+      "expected": {
+        "kind": "transaction",
+        "ruleId": "generic.keyword",
+        "confidence": "medium",
+        "txn": { "amountPaise": 45000, "direction": "debit", "kind": "expense", "status": "posted", "channel": "upi", "institution": "hdfc", "accountLast4": "1234", "vpa": "swiggy@axisbank", "upiRef": "612345678901", "counterparty": null }
+      }
+    },
+    {
+      "name": "NEFT salary credit with balance",
+      "sender": "AD-ICICIB-S",
+      "body": "Your A/c XX5678 is credited with Rs.25,000.00 on 01-10-26 by NEFT from ACME PVT LTD. Avl Bal Rs.1,02,345.50",
+      "receivedAt": "2026-10-01T10:00:00+05:30",
+      "expected": {
+        "kind": "transaction",
+        "ruleId": "generic.keyword",
+        "confidence": "medium",
+        "txn": { "amountPaise": 2500000, "direction": "credit", "kind": "income", "channel": "neft", "institution": "icici", "accountLast4": "5678", "counterparty": "ACME PVT LTD", "balancePaise": 10234550 }
+      }
+    },
+    {
+      "name": "Credit card spend; available limit is not a balance",
+      "sender": "JD-AXISBK-T",
+      "body": "Spent INR 1,299 on Credit Card XX4321 at AMAZON on 05-10-26. Avl Lmt INR 85,000",
+      "receivedAt": "2026-10-05T20:15:00+05:30",
+      "expected": {
+        "kind": "transaction",
+        "confidence": "medium",
+        "txn": { "amountPaise": 129900, "direction": "debit", "kind": "expense", "channel": "card", "accountLast4": "4321", "counterparty": "AMAZON", "balancePaise": null }
+      }
+    },
+    {
+      "name": "ATM withdrawal",
+      "sender": "VM-SBIINB",
+      "body": "INR 2,000 withdrawn from A/c XX1234 at ATM on 04-10-26. Avl Bal INR 10,000",
+      "receivedAt": "2026-10-04T18:00:00+05:30",
+      "expected": {
+        "kind": "transaction",
+        "txn": { "amountPaise": 200000, "direction": "debit", "kind": "cash_withdrawal", "channel": "atm", "institution": "sbi", "balancePaise": 1000000 }
+      }
+    },
+    {
+      "name": "Merchant refund",
+      "sender": "VM-KOTAKB-S",
+      "body": "Refund of INR 499.00 credited to your A/c XX1234 from FLIPKART on 03-10-26",
+      "receivedAt": "2026-10-03T11:00:00+05:30",
+      "expected": {
+        "kind": "transaction",
+        "txn": { "amountPaise": 49900, "direction": "credit", "kind": "refund", "counterparty": "FLIPKART" }
+      }
+    },
+    {
+      "name": "Failed UPI payment mentioning a future reversal",
+      "sender": "VM-HDFCBK-S",
+      "body": "UPI txn of INR 300 from A/c XX1234 to merchant@ybl failed. Amount debited, if any, will be reversed in 3 days.",
+      "receivedAt": "2026-10-02T09:00:00+05:30",
+      "expected": {
+        "kind": "transaction",
+        "txn": { "amountPaise": 30000, "direction": "debit", "kind": "expense", "status": "failed", "channel": "upi", "vpa": "merchant@ybl" }
+      }
+    },
+    {
+      "name": "OTP for a card txn",
+      "sender": "VM-AXISBK-S",
+      "body": "123456 is your OTP for txn of INR 2,500 at AMAZON on card XX4321. Valid for 5 mins. Do not share.",
+      "receivedAt": "2026-10-05T20:14:00+05:30",
+      "expected": { "kind": "ignored", "reason": "otp" }
+    },
+    {
+      "name": "Promotional DLT suffix",
+      "sender": "VM-HDFCBK-P",
+      "body": "Get a pre-approved personal loan of up to Rs 5,00,000. Apply now",
+      "receivedAt": "2026-10-01T12:00:00+05:30",
+      "expected": { "kind": "ignored", "reason": "promo" }
+    },
+    {
+      "name": "Limit increase is promo, not a credit",
+      "sender": "VM-SBICRD-S",
+      "body": "Congratulations! Your credit card limit has been increased to INR 2,00,000",
+      "receivedAt": "2026-10-01T12:00:00+05:30",
+      "expected": { "kind": "ignored", "reason": "promo" }
+    },
+    {
+      "name": "AutoPay notice for a future debit",
+      "sender": "VM-HDFCBK-S",
+      "body": "Your AutoPay of INR 649 for NETFLIX will be debited from A/c XX1234 on 10-10-26",
+      "receivedAt": "2026-10-07T09:00:00+05:30",
+      "expected": { "kind": "ignored", "reason": "reminder" }
+    },
+    {
+      "name": "Card bill due",
+      "sender": "VM-AXISBK-S",
+      "body": "Total amt due INR 12,500 for card XX4321. Min amt due INR 625. Pay by 15-10-26",
+      "receivedAt": "2026-10-01T09:00:00+05:30",
+      "expected": { "kind": "ignored", "reason": "reminder" }
+    },
+    {
+      "name": "UPI collect request",
+      "sender": "VM-ICICIB-S",
+      "body": "abc@okicici has requested money INR 500 from you. On approving, amount will be debited from your A/c",
+      "receivedAt": "2026-10-01T09:00:00+05:30",
+      "expected": { "kind": "ignored", "reason": "request" }
+    },
+    {
+      "name": "Balance enquiry",
+      "sender": "VM-SBIINB-S",
+      "body": "Avl Bal in A/c XX1234 as on 06-10-26 is INR 12,345.00",
+      "receivedAt": "2026-10-06T09:00:00+05:30",
+      "expected": { "kind": "ignored", "reason": "balance_info" }
+    },
+    {
+      "name": "Personal message",
+      "sender": "+919800000000",
+      "body": "Lunch at 1?",
+      "receivedAt": "2026-10-06T09:00:00+05:30",
+      "expected": { "kind": "ignored", "reason": "other" }
+    },
+    {
+      "name": "Money mentioned by a person goes to review, not the ledger",
+      "sender": "+919800000000",
+      "body": "Paid you Rs 500 for dinner",
+      "receivedAt": "2026-10-06T22:00:00+05:30",
+      "expected": { "kind": "review", "ruleId": "generic.keyword", "txn": { "amountPaise": 50000, "direction": "debit" } }
+    },
+    {
+      "name": "Bank message with an amount but no verb goes to review with no candidate",
+      "sender": "VM-HDFCBK-S",
+      "body": "Your A/c XX1234 INR 750 txn 612345678901",
+      "receivedAt": "2026-10-06T09:00:00+05:30",
+      "expected": { "kind": "review", "ruleId": null }
+    }
+  ]
+}
