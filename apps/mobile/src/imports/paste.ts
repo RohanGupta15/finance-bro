@@ -1,6 +1,8 @@
-import { hashString, parseSms, smsDedupeKey } from '@finance-bro/sms-parser';
+import { parseSms } from '@finance-bro/sms-parser';
 import type { ParsedTxn, RawSms } from '@finance-bro/sms-parser';
 import type { Ledger, ReviewedPasteTransaction, TransactionPatch } from '../db/ledger';
+import type { Fingerprinter } from './fingerprint';
+import { DuplicateReviewRequiredError, requiresDuplicateReview } from './key-state';
 
 export type PastePreparation =
   | { kind: 'ignored'; reason: string }
@@ -10,23 +12,29 @@ export type PastePreparation =
       ruleId: string | null;
       ruleVersion: number | null;
       identity: { id: string; dedupeKey: string; bodyHash: string };
+      fingerprintKeyId: string;
+      duplicateReviewRequired: boolean;
     };
 
 export type ReviewCorrections = TransactionPatch;
 
 export type PasteSaveResult = 'inserted' | 'duplicate';
 
-export function preparePastedSms(raw: RawSms): PastePreparation {
+export async function preparePastedSms(raw: RawSms, fingerprinter: Fingerprinter): Promise<PastePreparation> {
   const result = parseSms(raw);
   if (result.kind === 'ignored') return { kind: 'ignored', reason: result.reason };
 
   const candidate = result.kind === 'transaction' ? result.txn : result.candidate;
-  const bodyHash = hashString(raw.body);
+  const fingerprint = async (value: unknown[]) => {
+    const result = await fingerprinter.fingerprint(JSON.stringify(value));
+    if (!/^[a-f0-9]{64}$/.test(result)) throw new TypeError('Invalid keyed fingerprint');
+    return result;
+  };
+  const bodyHash = await fingerprint(['body', raw.body]);
   // ponytail: identical no-ref pastes share an ID; add a user-selected time disambiguator for repeated identical payments.
-  // hashString is non-cryptographic, so these IDs provide dedupe stability, not collision-resistant security.
   const identityKey = candidate?.upiRef
-    ? `upi:${hashString(`${candidate.upiRef}\n${candidate.direction}\n${candidate.status}\n${candidate.kind}`)}`
-    : `body:${smsDedupeKey({ ...raw, receivedAt: 0 })}`;
+    ? `upi:${await fingerprint(['upi', candidate.upiRef, candidate.direction, candidate.status, candidate.kind])}`
+    : `body:${await fingerprint(['sms', raw.sender.trim().toUpperCase(), raw.body])}`;
 
   return {
     kind: 'needs-review',
@@ -34,6 +42,8 @@ export function preparePastedSms(raw: RawSms): PastePreparation {
     ruleId: result.ruleId,
     ruleVersion: result.ruleVersion,
     identity: { id: `paste:${identityKey}`, dedupeKey: identityKey, bodyHash },
+    fingerprintKeyId: fingerprinter.keyId,
+    duplicateReviewRequired: false,
   };
 }
 
@@ -41,8 +51,17 @@ export async function saveReviewedPaste(
   ledger: Ledger,
   prepared: PastePreparation,
   corrections: ReviewCorrections = {},
+  options: { acknowledgeDuplicateRisk?: boolean } = {},
 ): Promise<PasteSaveResult> {
   if (prepared.kind !== 'needs-review') throw new TypeError('Ignored SMS cannot be saved');
+  if (!/^[a-f0-9]{64}$/.test(prepared.identity.bodyHash) ||
+      !/^(upi|body):[a-f0-9]{64}$/.test(prepared.identity.dedupeKey) ||
+      prepared.identity.id !== `paste:${prepared.identity.dedupeKey}`) {
+    throw new TypeError('Invalid keyed paste identity');
+  }
+  if (await requiresDuplicateReview(ledger, prepared.fingerprintKeyId) && options.acknowledgeDuplicateRisk !== true) {
+    throw new DuplicateReviewRequiredError();
+  }
   const candidate = prepared.candidate;
   if (!candidate) {
     for (const key of ['amountPaise', 'direction', 'kind', 'status', 'occurredAt'] as const) {

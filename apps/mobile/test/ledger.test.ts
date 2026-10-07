@@ -1,6 +1,7 @@
 /// <reference types="node" />
 
 import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync, rmdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -10,14 +11,26 @@ import { after, before, describe, it } from 'node:test';
 import {
   createLedger,
   migrateLedger,
+  type AccountPatch,
   type ImportedTransaction,
   type LedgerMigrations,
   type LedgerSQLiteClient,
+  type NewAccount,
+  type NewCategory,
   type NewTransaction,
+  type ReviewedPasteTransaction,
   type TransactionPatch,
 } from '../src/db/ledger';
-import { accounts, categories, transactions } from '../src/db/schema';
+import { accounts, budgets, categories, transactions } from '../src/db/schema';
+import type { Fingerprinter } from '../src/imports/fingerprint';
 import { preparePastedSms, saveReviewedPaste } from '../src/imports/paste';
+
+const testFingerprinter: Fingerprinter = {
+  keyId: 'a'.repeat(64),
+  async fingerprint(value) {
+    return createHmac('sha256', 'fictional-ledger-test-key').update(value).digest('hex');
+  },
+};
 
 const migrationsDirectory = resolve(process.cwd(), 'drizzle');
 const journal: LedgerMigrations['journal'] = JSON.parse(readFileSync(join(migrationsDirectory, 'meta/_journal.json'), 'utf8'));
@@ -77,14 +90,15 @@ function transaction(id: string, overrides: Partial<NewTransaction> = {}): NewTr
     amountPaise: 45600,
     direction: 'debit',
     kind: 'expense',
-    source: 'paste',
+    status: 'posted',
+    source: 'manual',
     occurredAt: new Date('2026-10-06T12:00:00.000Z'),
     ...overrides,
   };
 }
 
 function importedTransaction(id: string, overrides: Partial<ImportedTransaction> = {}): ImportedTransaction {
-  return { ...transaction(id), source: 'paste', ...overrides };
+  return { ...transaction(id), source: 'paste', dedupeKey: `dedupe:${id}`, bodyHash: `body:${id}`, ...overrides };
 }
 
 async function findTransaction(ledger: ReturnType<typeof createLedger>, id: string) {
@@ -134,7 +148,7 @@ describe('ledger', () => {
     };
     try {
       await fixture.ledger.migrateLedger();
-      const prepared = preparePastedSms(sms);
+      const prepared = await preparePastedSms(sms, testFingerprinter);
       assert.equal(prepared.kind, 'needs-review');
       if (prepared.kind !== 'needs-review') throw new Error('Expected review');
       assert.ok(prepared.candidate);
@@ -148,9 +162,9 @@ describe('ledger', () => {
       assert.equal(row?.ruleVersion, prepared.ruleVersion);
       assert.equal(row?.source, 'paste');
 
-      const replay = preparePastedSms({ ...sms, receivedAt: sms.receivedAt + 86_400_000 });
+      const replay = await preparePastedSms({ ...sms, receivedAt: sms.receivedAt + 86_400_000 }, testFingerprinter);
       assert.equal(await saveReviewedPaste(fixture.ledger, replay, {}), 'duplicate');
-      const alternateAlert = preparePastedSms({ ...sms, sender: 'AD-ICICIB-S', body: sms.body.replace('450.00', '450') });
+      const alternateAlert = await preparePastedSms({ ...sms, sender: 'AD-ICICIB-S', body: sms.body.replace('450.00', '450') }, testFingerprinter);
       assert.equal(await saveReviewedPaste(fixture.ledger, alternateAlert, {}), 'duplicate');
       assert.equal((await findTransaction(fixture.ledger, prepared.identity.id))?.amountPaise, 47000);
       await fixture.ledger.editTransaction(prepared.identity.id, { amountPaise: 49000 });
@@ -171,7 +185,7 @@ describe('ledger', () => {
     const raw = { sender: 'PASTE', receivedAt: Date.parse('2026-10-07T12:00:00Z'), body: 'Your A/c XX1234 INR 750 txn 612345678901' };
     try {
       await fixture.ledger.migrateLedger();
-      const unknown = preparePastedSms(raw);
+      const unknown = await preparePastedSms(raw, testFingerprinter);
       assert.equal(unknown.kind, 'needs-review');
       if (unknown.kind !== 'needs-review') throw new Error('Expected review');
       assert.equal(unknown.candidate, null);
@@ -187,12 +201,12 @@ describe('ledger', () => {
         saveReviewedPaste(fixture.ledger, unknown, values),
       ]);
       assert.deepEqual(outcomes.sort(), ['duplicate', 'inserted']);
-      const replay = preparePastedSms({ ...raw, receivedAt: raw.receivedAt + 86_400_000 });
+      const replay = await preparePastedSms({ ...raw, receivedAt: raw.receivedAt + 86_400_000 }, testFingerprinter);
       assert.equal(await saveReviewedPaste(fixture.ledger, replay, values), 'duplicate');
-      const ignored = preparePastedSms({ ...raw, body: '123456 is your OTP for INR 450. Do not share.' });
+      const ignored = await preparePastedSms({ ...raw, body: '123456 is your OTP for INR 450. Do not share.' }, testFingerprinter);
       assert.equal(ignored.kind, 'ignored');
       await assert.rejects(saveReviewedPaste(fixture.ledger, ignored, values));
-      const ambiguous = preparePastedSms({ ...raw, body: 'Paid you Rs 500 for dinner' });
+      const ambiguous = await preparePastedSms({ ...raw, body: 'Paid you Rs 500 for dinner' }, testFingerprinter);
       assert.equal(ambiguous.kind, 'needs-review');
       if (ambiguous.kind !== 'needs-review') throw new Error('Expected review');
       assert.ok(ambiguous.candidate);
@@ -207,8 +221,8 @@ describe('ledger', () => {
     const sms = { sender: 'PASTE', body: 'INR 450 debited from A/c XX1234 (UPI Ref No 612345678901).', receivedAt: Date.parse('2026-10-07T10:00:00Z') };
     try {
       await fixture.ledger.migrateLedger();
-      const debit = preparePastedSms(sms);
-      const credit = preparePastedSms({ ...sms, body: sms.body.replace('debited from', 'credited to') });
+      const debit = await preparePastedSms(sms, testFingerprinter);
+      const credit = await preparePastedSms({ ...sms, body: sms.body.replace('debited from', 'credited to') }, testFingerprinter);
       if (debit.kind !== 'needs-review' || credit.kind !== 'needs-review') throw new Error('Expected review');
       assert.notEqual(debit.identity.id, credit.identity.id);
       const injected = { id: 'forged', source: 'manual', ruleId: 'forged', body: sms.body, userEdited: false, deletedAt: new Date(1) };
@@ -235,14 +249,24 @@ describe('ledger', () => {
     const note = `Fictional note ${'x'.repeat(400)}`;
     const injected = {
       ...transaction('persisted', { accountId: 'cash', categoryId: 'food', note }),
-      userEdited: true,
+      smsRefId: 'forged-sms-ref',
+      dedupeKey: 'forged-dedupe-key',
+      bodyHash: 'forged-body-hash',
+      ruleId: 'forged-rule',
+      ruleVersion: 99,
+      userEdited: false,
       deletedAt: new Date('2026-10-05T00:00:00.000Z'),
     } as NewTransaction;
     await fixture.ledger.createTransaction(injected);
     const original = await findTransaction(fixture.ledger, 'persisted');
     assert.ok(original);
-    assert.equal(original.userEdited, false);
+    assert.equal(original.userEdited, true);
     assert.equal(original.deletedAt, null);
+    assert.equal(original.smsRefId, null);
+    assert.equal(original.dedupeKey, null);
+    assert.equal(original.bodyHash, null);
+    assert.equal(original.ruleId, null);
+    assert.equal(original.ruleVersion, null);
     assert.equal(original.note, note);
     fixture.sqlite.close();
 
@@ -256,6 +280,187 @@ describe('ledger', () => {
     assert.equal(reopened.note, note);
     assert.equal(reopened.deletedAt, null);
     fixture.sqlite.close();
+  });
+
+  it('validates manual/import/review writes and keeps account/category setup safe', async () => {
+    const fixture = openLedger(':memory:');
+    try {
+      await fixture.ledger.migrateLedger();
+
+      const injectedAccount = { id: 'cash', name: ' Cash ', type: 'cash', archived: true } as NewAccount;
+      await fixture.ledger.createAccount(injectedAccount);
+      let account = await fixture.ledger.db.select().from(accounts).where(eq(accounts.id, 'cash')).get();
+      assert.equal(account?.name, 'Cash');
+      assert.equal(account?.archived, false);
+      await fixture.ledger.updateAccount('cash', { name: ' Main cash ', institution: null, isOwn: false });
+      account = await fixture.ledger.db.select().from(accounts).where(eq(accounts.id, 'cash')).get();
+      assert.equal(account?.name, 'Main cash');
+      assert.equal(account?.institution, null);
+      assert.equal(account?.isOwn, false);
+      await assert.rejects(fixture.ledger.createAccount({ id: 'bad-account', name: '  ', type: 'cash' }));
+      await assert.rejects(fixture.ledger.createAccount({ id: '  ', name: 'Cash', type: 'cash' }));
+      await assert.rejects(fixture.ledger.createAccount({ id: 'bad-account', name: 'Cash', type: 'cheque' } as unknown as NewAccount));
+      await assert.rejects(fixture.ledger.createAccount({ id: 'bad-account', name: 'Cash', type: 'cash', institution: 1 } as unknown as NewAccount));
+      await assert.rejects(fixture.ledger.updateAccount('cash', { isOwn: 'yes' } as unknown as AccountPatch));
+      await assert.rejects(fixture.ledger.archiveAccount(' '));
+      assert.equal(await fixture.ledger.updateAccount('cash', { archived: true } as AccountPatch), false);
+      assert.equal(await fixture.ledger.archiveAccount('cash'), true);
+      assert.equal((await fixture.ledger.listAccounts()).length, 0);
+      assert.equal((await fixture.ledger.listAccounts(true))[0]?.archived, true);
+
+      const injectedCategory = { id: 'food', name: ' Food ', kind: 'expense', isSystem: true, parentId: 'missing' } as NewCategory;
+      await fixture.ledger.createCategory(injectedCategory);
+      let category = await fixture.ledger.db.select().from(categories).where(eq(categories.id, 'food')).get();
+      assert.equal(category?.name, 'Food');
+      assert.equal(category?.isSystem, false);
+      assert.equal(category?.parentId, null);
+      await fixture.ledger.updateCategory('food', { name: ' Dining ', icon: null, sortOrder: 10 });
+      category = await fixture.ledger.db.select().from(categories).where(eq(categories.id, 'food')).get();
+      assert.equal(category?.name, 'Dining');
+      assert.equal(category?.sortOrder, 10);
+      await assert.rejects(fixture.ledger.createCategory({ id: 'bad-category', name: 'Food', kind: 'other' } as unknown as NewCategory));
+      await assert.rejects(fixture.ledger.createCategory({ id: ' ', name: 'Food', kind: 'expense' }));
+      await assert.rejects(fixture.ledger.createCategory({ id: 'bad-category', name: 'Food', kind: 'expense', icon: false } as unknown as NewCategory));
+      await assert.rejects(fixture.ledger.updateCategory('food', { color: 12 } as never));
+      await assert.rejects(fixture.ledger.updateCategory('food', { sortOrder: 1.5 }));
+
+      await fixture.ledger.db.insert(budgets).values({ id: 'food-budget', categoryId: 'food', month: '2026-10', amountPaise: 10_000 }).run();
+      await assert.rejects(fixture.ledger.updateCategory('food', { kind: 'income' }));
+      await assert.rejects(fixture.ledger.deleteCategory('food'), RangeError);
+      await fixture.ledger.db.delete(budgets).where(eq(budgets.id, 'food-budget')).run();
+      await fixture.ledger.createTransaction(transaction('category-reference', { accountId: 'cash', categoryId: 'food' }));
+      await assert.rejects(fixture.ledger.deleteCategory('food'), RangeError);
+      await assert.rejects(fixture.ledger.updateCategory('food', { kind: 'income' }), RangeError);
+      await fixture.ledger.softDeleteTransaction('category-reference');
+      await assert.rejects(fixture.ledger.deleteCategory('food'), RangeError);
+      await assert.rejects(fixture.ledger.updateCategory('food', { kind: 'income' }), RangeError);
+
+      await fixture.ledger.createCategory({ id: 'unused', name: 'Unused', kind: 'income' });
+      assert.deepEqual((await fixture.ledger.listCategories('income')).map(({ id }) => id), ['unused']);
+      assert.equal(await fixture.ledger.deleteCategory('unused'), true);
+      assert.equal(await fixture.ledger.deleteCategory('unused'), false);
+      await fixture.ledger.createCategory({ id: 'salary', name: 'Salary', kind: 'income' });
+      await fixture.ledger.createCategory({ id: 'parent', name: 'Parent', kind: 'expense' });
+      await fixture.ledger.db.insert(categories).values({ id: 'child', name: 'Child', kind: 'expense', parentId: 'parent' }).run();
+      await assert.rejects(fixture.ledger.deleteCategory('parent'), RangeError);
+      await fixture.ledger.db.delete(categories).where(eq(categories.id, 'child')).run();
+      assert.equal(await fixture.ledger.deleteCategory('parent'), true);
+      await fixture.ledger.db.insert(categories).values({ id: 'system', name: 'System', kind: 'expense', isSystem: true }).run();
+      await assert.rejects(fixture.ledger.deleteCategory('system'), RangeError);
+      await assert.rejects(fixture.ledger.deleteCategory(' '));
+
+      const invalidManuals = [
+        { ...transaction('bad-id'), id: '  ' },
+        { ...transaction('bad-direction'), direction: 'wire' },
+        { ...transaction('bad-kind'), kind: 'subscription' },
+        { ...transaction('bad-status'), status: 'queued' },
+        { ...transaction('expense-credit'), direction: 'credit' },
+        { ...transaction('income-debit'), kind: 'income' },
+        { ...transaction('income-wrong-category'), direction: 'credit', kind: 'income', categoryId: 'food' },
+        { ...transaction('bad-source'), source: 'sms' },
+        { ...transaction('bad-date'), occurredAt: new Date(Number.NaN) },
+        { ...transaction('bad-created-at'), createdAt: new Date(Number.NaN) },
+        { ...transaction('bad-note'), note: 42 },
+        { ...transaction('bad-flag'), excludeFromStats: 'false' },
+        { ...transaction('missing-account'), accountId: 'missing' },
+      ];
+      for (const input of invalidManuals) {
+        await assert.rejects(fixture.ledger.createTransaction(input as unknown as NewTransaction));
+      }
+      await assert.rejects(fixture.ledger.createTransaction(transaction('refund-wrong-category', {
+        direction: 'credit', kind: 'refund', categoryId: 'salary',
+      })));
+      await assert.rejects(fixture.ledger.createTransaction(transaction('reversal-wrong-category', {
+        direction: 'credit', kind: 'reversal', categoryId: 'salary',
+      })));
+      await fixture.ledger.createTransaction(transaction('refund-valid', {
+        direction: 'credit', kind: 'refund', categoryId: 'food',
+      }));
+      await fixture.ledger.createTransaction(transaction('transfer-category', {
+        direction: 'credit', kind: 'transfer', categoryId: 'salary',
+      }));
+      await fixture.ledger.createTransaction(transaction('edit-row', { accountId: 'cash', categoryId: 'food' }));
+      for (const patch of [
+        { direction: 'wire' },
+        { kind: 'subscription' },
+        { status: 'queued' },
+        { direction: 'credit' },
+        { kind: 'income' },
+        { categoryId: 'salary' },
+        { occurredAt: new Date(Number.NaN) },
+        { note: 42 },
+        { excludeFromStats: 'false' },
+        { linkedTxnId: 'missing' },
+      ]) {
+        await assert.rejects(fixture.ledger.editTransaction('edit-row', patch as unknown as TransactionPatch));
+      }
+      assert.equal(await fixture.ledger.editTransaction('edit-row', { note: 'Corrected note', excludeFromStats: true }), true);
+      const corrected = await findTransaction(fixture.ledger, 'edit-row');
+      assert.equal(corrected?.note, 'Corrected note');
+      assert.equal(corrected?.excludeFromStats, true);
+      assert.equal(corrected?.userEdited, true);
+      assert.equal(await fixture.ledger.editTransaction('edit-row', {
+        direction: 'credit', kind: 'income', categoryId: 'salary',
+      }), true);
+      const reclassified = await findTransaction(fixture.ledger, 'edit-row');
+      assert.equal(reclassified?.direction, 'credit');
+      assert.equal(reclassified?.kind, 'income');
+      assert.equal(reclassified?.categoryId, 'salary');
+
+      const invalidImports = [
+        { ...importedTransaction('bad-import-id'), id: '' },
+        { ...importedTransaction('bad-import-direction'), direction: 'wire' },
+        { ...importedTransaction('bad-import-kind'), kind: 'subscription' },
+        { ...importedTransaction('bad-import-status'), status: 'queued' },
+        { ...importedTransaction('bad-import-pair'), direction: 'debit', kind: 'income' },
+        { ...importedTransaction('bad-import-category'), direction: 'credit', kind: 'income', categoryId: 'food' },
+        { ...importedTransaction('bad-import-refund-category'), direction: 'credit', kind: 'refund', categoryId: 'salary' },
+        { ...importedTransaction('bad-import-reversal-category'), direction: 'credit', kind: 'reversal', categoryId: 'salary' },
+        { ...importedTransaction('bad-import-source'), source: 'email' },
+        { ...importedTransaction('bad-import-date'), occurredAt: new Date(Number.NaN) },
+        { ...importedTransaction('bad-import-text'), note: false },
+        { ...importedTransaction('bad-import-flag'), excludeFromStats: 0 },
+        { ...importedTransaction('bad-import-ref'), categoryId: 'missing' },
+        { ...importedTransaction('bad-import-provenance'), ruleId: 'rule', ruleVersion: null },
+      ];
+      for (const input of invalidImports) {
+        await assert.rejects(fixture.ledger.upsertImportedTransaction(input as unknown as ImportedTransaction));
+      }
+      const imported = importedTransaction('sms-import', { source: 'sms', smsRefId: 'sms-row', ruleId: 'test.rule', ruleVersion: 1 });
+      assert.equal(await fixture.ledger.upsertImportedTransaction(imported), true);
+      const importedRow = await findTransaction(fixture.ledger, 'sms-import');
+      assert.equal(importedRow?.smsRefId, 'sms-row');
+      assert.equal(importedRow?.ruleVersion, 1);
+      await assert.rejects(
+        fixture.ledger.upsertImportedTransaction(importedTransaction('bad-sms-provenance', { source: 'sms' })),
+        TypeError,
+      );
+
+      const reviewedPaste: ReviewedPasteTransaction = {
+        id: 'reviewed-valid',
+        amountPaise: 25_000,
+        direction: 'debit',
+        kind: 'expense',
+        status: 'posted',
+        occurredAt: new Date('2026-10-06T12:00:00.000Z'),
+        dedupeKey: 'review-dedupe',
+        bodyHash: 'review-body',
+        ruleId: null,
+        ruleVersion: null,
+      };
+      await assert.rejects(fixture.ledger.insertReviewedPaste({ ...reviewedPaste, id: '' }));
+      await assert.rejects(fixture.ledger.insertReviewedPaste({ ...reviewedPaste, direction: 'wire' } as unknown as ReviewedPasteTransaction));
+      await assert.rejects(fixture.ledger.insertReviewedPaste({ ...reviewedPaste, direction: 'credit' }));
+      await assert.rejects(fixture.ledger.insertReviewedPaste({ ...reviewedPaste, categoryId: 'salary' }));
+      await assert.rejects(fixture.ledger.insertReviewedPaste({
+        ...reviewedPaste, direction: 'credit', kind: 'income', categoryId: 'food',
+      }));
+      await assert.rejects(fixture.ledger.insertReviewedPaste({ ...reviewedPaste, ruleVersion: 1 }));
+      await assert.rejects(fixture.ledger.insertReviewedPaste({ ...reviewedPaste, bodyHash: '' }));
+      await fixture.ledger.insertReviewedPaste(reviewedPaste);
+    } finally {
+      fixture.sqlite.close();
+    }
   });
 
   it('updates only untouched imports and preserves edits, tombstones, and manual rows', async () => {
@@ -313,7 +518,7 @@ describe('ledger', () => {
       assert.equal(row?.source, 'manual');
       assert.equal(row?.userEdited, false);
       await assert.rejects(
-        fixture.ledger.upsertImportedTransaction(transaction('bad-import', { source: 'manual' }) as ImportedTransaction),
+        fixture.ledger.upsertImportedTransaction(transaction('bad-import') as unknown as ImportedTransaction),
         TypeError,
       );
     } finally {

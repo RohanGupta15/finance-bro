@@ -45,6 +45,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     }],
     'expo-sqlite',
+    'expo-secure-store',
     'expo-image',
     [
       'expo-splash-screen',

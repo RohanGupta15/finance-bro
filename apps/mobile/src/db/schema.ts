@@ -4,6 +4,7 @@ import {
   integer,
   sqliteTable,
   text,
+  unique,
 } from 'drizzle-orm/sqlite-core';
 import type { AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
 
@@ -20,6 +21,12 @@ export const transactionKinds = [
 export const transactionStatuses = ['posted', 'failed', 'pending'] as const;
 export const transactionSources = ['sms', 'manual', 'ios_intent', 'paste'] as const;
 export const categoryKinds = ['expense', 'income'] as const;
+
+/** Public key identifier only. The fingerprint secret belongs in platform key storage. */
+export const importKeyState = sqliteTable('import_key_state', {
+  id: integer('id').primaryKey(),
+  keyId: text('key_id').notNull(),
+}, (table) => [check('import_key_singleton', sql`${table.id} = 1`)]);
 
 export const accounts = sqliteTable(
   'accounts',
@@ -51,6 +58,50 @@ export const categories = sqliteTable(
   },
   (table) => [
     check('categories_kind_check', sql`${table.kind} in ('expense', 'income')`),
+  ],
+);
+
+export const budgets = sqliteTable(
+  'budgets',
+  {
+    id: text('id').primaryKey(),
+    categoryId: text('category_id').notNull().references(() => categories.id),
+    month: text('month').notNull(),
+    amountPaise: integer('amount_paise').notNull(),
+  },
+  (table) => [
+    check(
+      'budgets_month_check',
+      sql`length(${table.month}) = 7 and ${table.month} glob '[0-9][0-9][0-9][0-9]-[0-9][0-9]' and cast(substr(${table.month}, 6, 2) as integer) between 1 and 12`,
+    ),
+    check(
+      'budgets_amount_paise_check',
+      sql`typeof(${table.amountPaise}) = 'integer' and ${table.amountPaise} between 1 and 9007199254740991`,
+    ),
+    unique('budgets_category_month_unique').on(table.categoryId, table.month),
+  ],
+);
+
+export const bills = sqliteTable(
+  'bills',
+  {
+    id: text('id').primaryKey(),
+    label: text('label').notNull(),
+    amountPaise: integer('amount_paise').notNull(),
+    dueDate: text('due_date').notNull(),
+    paid: integer('paid', { mode: 'boolean' }).notNull().default(false),
+  },
+  (table) => [
+    check('bills_label_check', sql`length(trim(${table.label})) > 0`),
+    check(
+      'bills_amount_paise_check',
+      sql`typeof(${table.amountPaise}) = 'integer' and ${table.amountPaise} between 1 and 9007199254740991`,
+    ),
+    check(
+      'bills_due_date_check',
+      sql`length(${table.dueDate}) = 10 and ${table.dueDate} glob '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'`,
+    ),
+    check('bills_paid_check', sql`typeof(${table.paid}) = 'integer' and ${table.paid} in (0, 1)`),
   ],
 );
 
