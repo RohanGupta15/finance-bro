@@ -34,7 +34,7 @@ async function loadSigner(): Promise<FingerprintSigner> {
   return createHmacSha256(key, async (bytes) => {
     const input = new Uint8Array(bytes.byteLength);
     input.set(bytes);
-    return new Uint8Array(await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, input.buffer));
+    return new Uint8Array(await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, input));
   });
 }
 
