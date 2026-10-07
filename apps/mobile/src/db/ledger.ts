@@ -1,7 +1,14 @@
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/sqlite-proxy';
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { accounts, categories, transactions } from './schema';
+import {
+  accounts,
+  categories,
+  transactionDirections,
+  transactionKinds,
+  transactionStatuses,
+  transactions,
+} from './schema';
 
 export type LedgerMigrations = {
   journal: {
@@ -16,6 +23,30 @@ export type LedgerSQLiteClient = Pick<
 >;
 
 type TransactionInsert = typeof transactions.$inferInsert;
+type TransactionRow = typeof transactions.$inferSelect;
+export type ReviewedPasteTransaction = Pick<
+  TransactionRow,
+  | 'id'
+  | 'amountPaise'
+  | 'direction'
+  | 'kind'
+  | 'status'
+  | 'occurredAt'
+  | 'dedupeKey'
+  | 'bodyHash'
+  | 'ruleId'
+  | 'ruleVersion'
+> & Partial<Pick<
+  TransactionRow,
+  | 'accountId'
+  | 'counterparty'
+  | 'merchantId'
+  | 'categoryId'
+  | 'note'
+  | 'upiRef'
+  | 'linkedTxnId'
+  | 'excludeFromStats'
+>>;
 export type NewTransaction = Omit<
   TransactionInsert,
   'createdAt' | 'updatedAt' | 'deletedAt' | 'userEdited'
@@ -51,6 +82,24 @@ export function assertValidAmountPaise(amountPaise: number): void {
 function assertValidDate(value: Date, name: string): void {
   if (!(value instanceof Date) || !Number.isFinite(value.getTime())) {
     throw new TypeError(`${name} must be a valid Date`);
+  }
+}
+
+function assertValidReviewedPaste(input: ReviewedPasteTransaction): void {
+  if (typeof input.id !== 'string' || input.id.length === 0) throw new TypeError('id must be a non-empty string');
+  assertValidAmountPaise(input.amountPaise);
+  assertValidDate(input.occurredAt, 'occurredAt');
+  if (!transactionDirections.includes(input.direction)) throw new TypeError('direction is invalid');
+  if (!transactionKinds.includes(input.kind)) throw new TypeError('kind is invalid');
+  if (!transactionStatuses.includes(input.status)) throw new TypeError('status is invalid');
+  if (typeof input.dedupeKey !== 'string' || input.dedupeKey.length === 0) throw new TypeError('dedupeKey is required');
+  if (typeof input.bodyHash !== 'string' || input.bodyHash.length === 0) throw new TypeError('bodyHash is required');
+  if ((input.ruleId === null) !== (input.ruleVersion === null)) throw new TypeError('ruleId and ruleVersion must both be null or set');
+  if (input.ruleId !== null && (typeof input.ruleId !== 'string' || input.ruleId.length === 0)) {
+    throw new TypeError('ruleId must be a non-empty string or null');
+  }
+  if (input.ruleVersion !== null && (!Number.isSafeInteger(input.ruleVersion) || input.ruleVersion <= 0)) {
+    throw new TypeError('ruleVersion must be a positive safe integer or null');
   }
 }
 
@@ -173,6 +222,9 @@ export function createLedger(client: LedgerSQLiteClient, migrations: LedgerMigra
         smsRefId: input.smsRefId,
         upiRef: input.upiRef,
         dedupeKey: input.dedupeKey,
+        bodyHash: input.bodyHash,
+        ruleId: input.ruleId,
+        ruleVersion: input.ruleVersion,
         linkedTxnId: input.linkedTxnId,
         excludeFromStats: input.excludeFromStats,
         updatedAt,
@@ -188,6 +240,36 @@ export function createLedger(client: LedgerSQLiteClient, migrations: LedgerMigra
             sql`${transactions.source} <> 'manual'`,
           ),
         })
+        .returning({ id: transactions.id }).all().then((rows) => rows.length > 0);
+    },
+    async insertReviewedPaste(input: ReviewedPasteTransaction): Promise<boolean> {
+      assertValidReviewedPaste(input);
+      const createdAt = now();
+      return db.insert(transactions).values({
+        id: input.id,
+        amountPaise: input.amountPaise,
+        direction: input.direction,
+        kind: input.kind,
+        status: input.status,
+        accountId: input.accountId,
+        counterparty: input.counterparty,
+        merchantId: input.merchantId,
+        categoryId: input.categoryId,
+        occurredAt: input.occurredAt,
+        note: input.note,
+        source: 'paste',
+        upiRef: input.upiRef,
+        dedupeKey: input.dedupeKey,
+        bodyHash: input.bodyHash,
+        ruleId: input.ruleId,
+        ruleVersion: input.ruleVersion,
+        linkedTxnId: input.linkedTxnId,
+        excludeFromStats: input.excludeFromStats ?? false,
+        userEdited: true,
+        createdAt,
+        updatedAt: createdAt,
+        deletedAt: null,
+      }).onConflictDoNothing()
         .returning({ id: transactions.id }).all().then((rows) => rows.length > 0);
     },
   };

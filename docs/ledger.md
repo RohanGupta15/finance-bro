@@ -6,9 +6,21 @@ Queries use Drizzle's `sqlite-proxy` adapter with a local async Expo SQLite exec
 
 ## Shared contract
 
-Only accounts, categories and transactions are implemented. IDs are caller-supplied stable strings. Amounts are positive safe integer paise; direction carries debit/credit. Dates use `Date` values at the TypeScript boundary and epoch milliseconds in SQLite. Nullable account/category references allow uncategorized entries. Enum values follow CLAUDE.md; raw message text is never a ledger field.
+Only accounts, categories and transactions are implemented. IDs are caller-supplied stable strings. Amounts are positive safe integer paise; direction carries debit/credit. Dates use `Date` values at the TypeScript boundary and epoch milliseconds in SQLite. Nullable account/category references allow uncategorized entries. Transactions can retain parser rule ID/version. Enum values follow CLAUDE.md; raw message text is never a ledger field.
 
-User changes set `userEdited`; deletion retains a tombstone. Automatic updates must use the guarded ledger operation rather than unrestricted database updates. The same transaction ID cannot overwrite a correction or resurrect a deletion. Cross-source identity matching and cryptographically keyed import fingerprints remain import work; the storage API alone does not deduplicate messages with different IDs.
+User changes set `userEdited`; deletion retains a tombstone. Automatic updates must use the guarded ledger operation rather than unrestricted database updates. The same transaction ID cannot overwrite a correction or resurrect a deletion. General cross-source identity matching and cryptographically keyed import fingerprints remain import work; the storage API alone does not deduplicate messages with different IDs.
+
+## Pasted message review/save contract (#12 data layer)
+
+Import `preparePastedSms` and `saveReviewedPaste` from `src/imports/paste.ts`. Preparation uses the shared deterministic parser and does not write to storage. Both confident transactions and ambiguous candidates require review. Ignored messages return a reason and cannot be saved. A review with no candidate requires the user to supply the missing transaction fields.
+
+Call `saveReviewedPaste(ledger, prepared, corrections)` only after explicit user confirmation. Corrections use ledger types, including integer paise and `Date` timestamps. The save validates through the shared ledger and returns `inserted` or `duplicate`. It atomically inserts a user-protected transaction, preserving parser provenance; it never updates an existing transaction, including tombstones. Correcting transaction values does not change the prepared identity.
+
+Repeated pastes use an identity independent of the paste time. Matching UPI references can identify differently worded alerts, while distinct directions/statuses/kinds remain separate money movements. Without a reference, identical sender/body content is treated conservatively as a replay, even on another day. Two genuine identical messages without a unique reference cannot be distinguished by this paste flow; use manual entry for the second transaction. General fuzzy matching, transfer pairing and legacy rows saved with caller-selected IDs are outside this contract.
+
+The fallback reuses the parser's non-cryptographic hash. It is a local dedupe aid, not an anonymisation or security guarantee; collisions and guessed-content attacks remain possible. Keyed cryptographic fingerprints remain separate import hardening work.
+
+Preparation retains parsed fields and identity metadata, never the full raw body. Rohan's screen owns the transient input: clear it after completion or dismissal, and display save errors without logging the message. The review UI is not connected yet; this contract does not complete the screen acceptance criteria of #12. No inbox permission, network service, or new dependency is required.
 
 ## Migrations and checks
 

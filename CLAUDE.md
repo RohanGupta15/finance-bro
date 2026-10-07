@@ -2,7 +2,7 @@
 
 Guidance for Claude Code (and humans) working in this repo. Product context is in [README.md](README.md); workflow is in [CONTRIBUTING.md](CONTRIBUTING.md). This file records **decisions and conventions** — keep it current when a decision changes.
 
-> **Status:** Expo app shell and generic SMS parser, plus the local ledger storage foundation. Ledger screens and save flows are not yet connected. Institution rules, native SMS/App Intent modules and ledger UI remain planned.
+> **Status:** Expo app shell and generic SMS parser, plus the local ledger storage foundation. A data-side paste review/save contract is implemented (see docs/ledger.md); ledger screens and the review UI are not yet connected. Institution rules, native SMS/App Intent modules and ledger UI remain planned.
 
 ## What we're building
 
