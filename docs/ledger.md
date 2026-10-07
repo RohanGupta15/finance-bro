@@ -36,6 +36,8 @@ The browser must support cross-origin isolation and OPFS on a secure origin (loc
 
 ## Native builds and dependencies
 
+On 2026-10-07, an installed development client on a Motorola Edge 60 Pro running Android 17 passed isolated native ledger checks, including migration, validated writes, corrections, tombstones, concurrent paste saves and persistence after an app process restart. The visible fictional paste demo also passed. See [the validation record](android-ledger-validation.md) for evidence and limits. Connected ledger/review screens and iOS behavior remain unverified.
+
 Adding Expo SQLite requires rebuilding the development client. Existing clients cannot acquire the native module through Metro alone. Signing/build-service setup is separate from local storage work.
 
 Expo SQLite and await-lock use MIT licenses; Drizzle ORM is Apache-2.0; Drizzle Kit and inline-import use MIT. The SQLite Android build compiles bundled SQLite source by default and does not add Firebase Messaging. These scoped checks do not establish that the complete app meets F-Droid's clean-source/transitive build requirements; that remains #27. The explicit workspace build-script allowlist is unchanged.
