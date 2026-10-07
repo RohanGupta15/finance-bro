@@ -1,6 +1,6 @@
 # V1 local data and business layer
 
-Scope confirmed by Suvo on 2026-10-07: the complete local data layer for the manual-first MVP (#8–#15). Rohan owns custom screens. There is no hosted backend, app account, network prerequisite, analytics or automatic message access. Automatic Android/iOS capture, receipt OCR, connected email, forecasts and encrypted backup/restore remain separate work.
+Scope confirmed by Suvo on 2026-10-07: the complete local data layer for the manual-first MVP (#8–#15). Shared screen integration follows the approved Ink and Stamps design. Rohan owns all iOS-specific implementation and physical-device validation; shared app, Android and web work are handled here. There is no hosted backend, app account, network prerequisite, analytics or automatic message access. Automatic Android/iOS capture, receipt OCR, connected email, forecasts and encrypted backup/restore remain separate work.
 
 ## Screen contract
 
@@ -51,4 +51,4 @@ Final-revision follow-up on 2026-10-07: [Android build 37625072552](https://gith
 
 `pnpm check` runs the SQLite-backed migration/persistence, manual validation, CRUD, totals/month boundaries, budget/bill, CSV, HMAC test-vector and import key-loss checks. `test/runtime-check.ts` supplies a reusable fictional-data scenario for native/browser storage, separate from the application's main ledger.
 
-Native SecureStore/Crypto dependencies require a rebuilt development client. Verify the actual platform adapters and restart persistence on Android/iOS; web must verify OPFS SQLite and IndexedDB key persistence on a secure origin with required isolation headers. [Issue #34](https://github.com/Starforge-lab/finance-bro/issues/34) tracks the outstanding iOS data-layer device gate. Bundle exports and Node tests are insufficient evidence for those platform gates. Custom screens, actual CSV destinations and human usability remain separate integration gates; the APIs alone do not close their UI issues.
+Native SecureStore/Crypto dependencies require a rebuilt development client. Verify the actual platform adapters and restart persistence on Android/iOS; web must verify OPFS SQLite and IndexedDB key persistence on a secure origin with required isolation headers. [Issue #34](https://github.com/Starforge-lab/finance-bro/issues/34) tracks the outstanding iOS data-layer device gate owned by Rohan. His iOS-device results are required before claiming iOS readiness. Bundle exports and Node tests are insufficient evidence for those platform gates. Custom screens, actual CSV destinations and human usability remain separate integration gates; the APIs alone do not close their UI issues.
