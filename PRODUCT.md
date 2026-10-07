@@ -34,6 +34,8 @@ Mobile use is primary, with Android, iOS, and web support. Suvo can test on a Mo
 
 ## Evidence on Hand
 
+The [personal-finance benchmark research](docs/research/2026-10-07-personal-finance-benchmarks.md) compares commercial and open-source apps, separates documented capabilities from anecdotal shortcomings, and maps lessons to the existing development issues. Use it as evidence when refining feature acceptance and validation; proposals in the report do not change confirmed scope. Competitor features and popularity are not proof of Finance Bro user outcomes.
+
 The repository contains the Expo app shell and an SMS parser package with parser code, tests, and fixtures. A frozen install and `pnpm check` passed, including type checking, lint, and 31 parser tests. The Expo install check, Expo Doctor (20/20), and Android/iOS/web export also passed locally. Browser rendering showed Home and four tab items; Home-to-Settings navigation and one synthetic SMS parse displaying a ₹450 SWIGGY expense were observed. The other tabs have not had a full click-through. No physical Android or iOS device or signed native build has been tested. Remote CI and CodeQL results are published on pull requests; use those checks for the current revision.
 
 ## Product Principles

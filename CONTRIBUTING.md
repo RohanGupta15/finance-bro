@@ -34,6 +34,7 @@ This project uses a **development build**, not Expo Go. Rebuild the dev client w
 ## Workflow
 
 1. Open or pick an issue. For parser work, use an anonymised SMS sample.
+   For finance workflows, consult the relevant row in [the benchmark research](docs/research/2026-10-07-personal-finance-benchmarks.md). Carry the applicable failure-mode check into validation and record observed results; follow agreed issue scope rather than copying a competitor's feature set.
 2. Create a short-lived branch from the default `dev` branch: `feat/…`, `fix/…`, `parser/<institution>-…`, or `chore/…`. See the [branching guide](docs/branching.md) for PR targets and release syncs.
 3. Write a failing test first for parser and matching logic.
 4. Run the checks below before pushing.
