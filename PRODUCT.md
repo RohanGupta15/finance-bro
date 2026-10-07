@@ -48,6 +48,7 @@ The repository contains the Expo app shell and an SMS parser package with parser
 ## Product Principles
 
 - Maintain a future-tech, bleeding-edge feel through a distinctive visual direction, responsive interactions and purposeful motion. Follow approved mockups; modern presentation must preserve accessibility, low-effort understanding, exact money handling and clear persistence/error states. Use the newest compatible tooling rather than upgrades that break the shared app contract.
+- Approved visual baseline: Rohan's Ink and Stamps system in [PR #33](https://github.com/Starforge-lab/finance-bro/pull/33). Preserve that identity while refining calmness, hierarchy and interactions. Build the future-tech feel through polished motion, purposeful haptics and fast feedback; respect reduced-motion preferences. The mockups are targets for subsequent screen implementation, not current app capabilities.
 - Design for low energy and limited attention: make the everyday financial picture understandable without overwhelming the user; deeper detail should be optional.
 - Explain overspending and estimates in plain language. Distinguish recorded facts from projections and make missing data or assumptions clear.
 - Keep everyday expense, income, budget, and bill workflows in the initial product scope.
