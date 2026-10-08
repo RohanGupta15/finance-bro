@@ -65,6 +65,10 @@ CSV write failures now attempt deletion of the created file. If deletion also fa
 
 Frozen installation, typecheck, lint, 34 mobile/data tests plus 31 parser tests, SDK dependency check, Expo Doctor (20/20), and Android/iOS/web exports passed. These checks do not prove Android destination cancellation, filesystem error behavior or physical haptics. Android's existing folder picker retains persisted directory grants; replacing it with a single-file destination or releasing grants is still required. Rohan's design-system PR #33 is now merged into dev; #31 and #37 remain open.
 
+## PR review browser checkpoint — 2026-10-08
+
+On the combined #40/#41 revision, browser checks with fictional data confirmed that tapping Uncategorized shows only the uncategorized entry, and tapping it again restores all entries. The month sheet reached a future month with no entries, retained the current month, and returned to it. A fictional November category budget persisted after reload and remained reachable through Next month despite having no transactions. These checks do not establish native-device, large-text or screen-reader behavior for the revised controls.
+
 ## Remaining release gates
 
 - Complete Android ambiguous/ignored/corrected/deleted replay and failure-recovery checks; repeat browser corrected/deleted replay after the latest disclosure refinements.
