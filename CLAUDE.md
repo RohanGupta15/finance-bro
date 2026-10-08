@@ -176,8 +176,10 @@ Every schema change ships a Drizzle migration, tested against a seeded DB.
 
 ## UX direction
 
-Inspired by [Sushi](https://github.com/jerameel/sushi) — inspiration, not a template:
-- Big total balance as the header, account cards in a horizontal row, date-grouped transaction feed with signed, colour-coded amounts (green credit / red debit), one primary "new transaction" action, filter chips (All / Debit / Credit), light + dark themes, a calm warm accent.
+The visual system is **"Ink and Stamps"** (C2 light, C3 dark), documented in [DESIGN.md](DESIGN.md) with tokens in `apps/mobile/src/constants/theme.ts`. Read DESIGN.md before building any screen. In short: ink outlines on paper, money in Space Mono, colour only in small category stamps plus one rationed highlighter yellow, ink-only charts, and red only for over-budget or destructive actions (not for ordinary debits).
+
+Behaviour was originally inspired by [Sushi](https://github.com/jerameel/sushi) (inspiration, not a template):
+- A date-grouped transaction feed, one primary "new transaction" action, light + dark themes.
 - Where we go further: auto-logged entries with one-tap category fix, number-pad-first manual add (~3 s), a Review inbox, and insights that state facts ("Food is 32% higher than last month") rather than chart walls.
 
 ## Scope
