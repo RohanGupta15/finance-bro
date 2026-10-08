@@ -11,6 +11,7 @@ import { Categories, Fonts, Radius, Spacing, Stroke, Type } from '@/constants/th
 import { getLedger, parseInrAmount, type DataLayer } from '@/db';
 import { amountInput, indiaDate, money, parseIndiaDate } from '@/utils/display';
 import { useTheme } from '@/hooks/use-theme';
+import { confirmSave } from '@/utils/confirm-save';
 
 type BudgetRows = Awaited<ReturnType<DataLayer['getBudgetSummary']>>;
 type BillRows = Awaited<ReturnType<DataLayer['listBills']>>;
@@ -206,6 +207,7 @@ export function Budgets() {
         await load();
         throw new RangeError('This item is no longer available. The list has been refreshed.');
       }
+      void confirmSave();
       await load();
       return true;
     } catch (error) {

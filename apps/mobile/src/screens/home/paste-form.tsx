@@ -22,6 +22,7 @@ import { amountInput, indiaDate, money, parseIndiaDate } from '@/utils/display';
 import { parseInrAmount } from '@/db/manual';
 import { Fonts, Radius, Spacing, Stroke, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { confirmSave } from '@/utils/confirm-save';
 
 type Direction = typeof transactionDirections[number];
 type Kind = typeof transactionKinds[number];
@@ -321,6 +322,7 @@ export function PasteForm({
       const result = await ledger.saveReviewedPaste(prepared, corrections, {
         acknowledgeDuplicateRisk: riskAcknowledged,
       });
+      if (result === 'inserted') void confirmSave();
       if (mountedRef.current) setOutcome(result);
     } catch (cause) {
       if (!mountedRef.current) return;

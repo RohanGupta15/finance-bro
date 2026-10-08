@@ -22,6 +22,7 @@ import type { DataLayer } from '@/db/service';
 import { parseInrAmount } from '@/db/manual';
 import { amountInput, indiaDate, parseIndiaDate } from '@/utils/display';
 import { useTheme } from '@/hooks/use-theme';
+import { confirmSave } from '@/utils/confirm-save';
 
 type Transaction = NonNullable<Awaited<ReturnType<DataLayer['getTransaction']>>>;
 type Direction = 'debit' | 'credit';
@@ -215,7 +216,10 @@ export function EntryForm({ ledger, onSaved, onCancel, transaction }: EntryFormP
       submitGuard.current = false;
       setSubmitting(false);
     }
-    if (saved) onSaved();
+    if (saved) {
+      void confirmSave();
+      onSaved();
+    }
   }
 
   const saveDisabled = submitting || loadState !== 'ready';

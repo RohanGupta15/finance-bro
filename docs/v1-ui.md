@@ -53,11 +53,19 @@ The reusable fixture in `apps/mobile/src/dev/seed-demo.ts` is not called by norm
 
 Physical Android checks observed populated Home, Budgets, the six-month Insights chart and Settings after restart. Home was left open for the user. Local development screenshots are not published to GitHub. Project checks now include 30 mobile/data tests plus 31 parser tests; all passed, along with typecheck and lint.
 
+## Save feedback and export recovery checkpoint — 2026-10-08
+
+Android confirms committed manual entry saves/edits, newly inserted pastes, and budget/bill writes with the platform Confirm haptic. Validation failures and duplicate paste outcomes do not trigger it. Feedback runs without delaying navigation or refresh; unavailable haptics cannot change a successful write into a save error. Expo Haptics 58.0.5 requires a rebuilt development client. The missing-native-runtime recovery test passes; physical haptic behavior remains unverified until that client is installed. iOS feedback remains Rohan's work; web retains visual confirmation.
+
+CSV write failures now attempt deletion of the created file. If deletion also fails, a typed error reaches Settings with a warning to check the chosen folder for an incomplete CSV. Three injected tests cover successful write, successful cleanup and failed cleanup. Account/category saves clear stale notices at the start of a new action. Web export reports a download request rather than claiming a completed save; browser verification observed the notice and an actual one-row fictional CSV download with the expected exact amount and columns.
+
+Frozen installation, typecheck, lint, 34 mobile/data tests plus 31 parser tests, SDK dependency check, Expo Doctor (20/20), and Android/iOS/web exports passed. These checks do not prove Android destination cancellation, filesystem error behavior or physical haptics. Android's existing folder picker retains persisted directory grants; replacing it with a single-file destination or releasing grants is still required. Rohan's design-system PR #33 is now merged into dev; #31 and #37 remain open.
+
 ## Remaining release gates
 
 - Complete Android ambiguous/ignored/corrected/deleted replay and failure-recovery checks; repeat browser corrected/deleted replay after the latest disclosure refinements.
 - Complete the current entry/edit/delete, discard, reload, failure recovery, accounts/categories, budget/bill mutations and CSV destination matrix on supported platforms.
 - Rohan owns all iOS-specific work and physical-device checks, including keyboard, navigation, persistence and CSV (issue #34).
 - Verify large text, screen-reader navigation, responsive web and long/large ledgers.
-- Purposeful motion, haptics and reduced-motion behavior remain to be implemented/verified.
+- Purposeful motion and reduced-motion behavior remain to be implemented/verified; Android save haptics need a matching client and device check, and iOS feedback belongs to Rohan.
 - Review dependency PRs #31, #33 and #37, obtain peer review and pass CI at the exact frontend revision before promotion. Do not infer release readiness from bundle exports or screenshots.
