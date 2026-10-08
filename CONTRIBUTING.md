@@ -23,7 +23,7 @@ To run the app on a phone:
 npm install --global eas-cli
 eas login
 cd apps/mobile
-eas init                     # once: link the intended shared organization project
+# Already linked to @starforge-lab/finance-bro; your Expo account needs org access.
 cd ../..
 pnpm build:android:dev       # or build:ios:dev; install the result on your device
 pnpm dev                     # start Metro, then open the dev build
@@ -31,11 +31,17 @@ pnpm dev                     # start Metro, then open the dev build
 
 This project uses a **development build**, not Expo Go. Rebuild the dev client whenever a native module, config plugin or native dependency changes.
 
-The shared Expo project and builds will belong to Rohan's planned organization. Wait for organization creation and your accepted invitation, verify access, then link the intended organization project. Keep both maintainers on that project rather than creating personal build destinations. See [the roadmap's build setup status](docs/mvp-roadmap.md#shared-expo-project-and-builds).
+EAS profiles pin pnpm to the root `packageManager` version. Keep these pins aligned when changing pnpm. The SDK 58 image's default pnpm 11 launcher failed while switching to pnpm 12 on Linux; an explicit build pin avoids that version-switch path.
+
+### Android APK through GitHub Actions
+
+The `Android development APK` workflow builds an ARM64 debug client (`com.rohangupta.financebro.dev`) on a standard Ubuntu runner, without EAS credentials or its build queue. Native configuration/dependency changes in PRs to `dev` trigger it. Once the workflow is on `dev`, run it manually with `gh workflow run android-development.yml --ref <branch>`.
+
+Download the `finance-bro-dev-arm64` artifact from the successful run within one day, install its APK on an ARM64 Android phone, and start Metro with `pnpm dev`. This development client needs Metro; it is not a store release. Standard runner compute is free for this public repository; artifacts still count toward the organization's storage allowance. The workflow retains one APK for one day and uses no paid runner. Generated `android/` and `ios/` directories remain uncommitted.
 
 ## Workflow
 
-1. Open or pick an issue. For parser work, use an anonymised SMS sample.
+1. Open or pick an issue. Follow [the manual-first roadmap](docs/mvp-roadmap.md) and confirm the issue's acceptance criteria. For parser work, use an anonymised SMS sample.
 2. Create a short-lived branch from the default `dev` branch: `feat/…`, `fix/…`, `parser/<institution>-…`, or `chore/…`. See the [branching guide](docs/branching.md) for PR targets and release syncs.
 3. Write a failing test first for parser and matching logic.
 4. Run the checks below before pushing.

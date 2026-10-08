@@ -1,5 +1,5 @@
-import { PlaceholderScreen } from '@/components/placeholder-screen';
+import { Budgets } from '@/screens/budgets';
 
 export default function BudgetsRoute() {
-  return <PlaceholderScreen title="Budgets" note="Category budgets arrive in v1.1." />;
+  return <Budgets />;
 }

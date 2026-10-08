@@ -18,17 +18,19 @@ Primarily for Suvo's personal finances, with friends as additional users. Suvo a
 
 Help people in India track personal expenses and income, manage budgets and bills, and reduce manual transaction entry. English is the initial language. INR is the maintainer-selected default based on the region; multi-currency support is undecided.
 
+A core goal is to help users who are tired after a day's work and feeling lazy open the app without feeling overwhelmed, understand their finances, see where they are overspending, and get an idea of how much they will have at the end of the month. Everyday understanding should require little effort or financial analysis from the user.
+
 ## Operating Context
 
-Mobile use is primary, with Android, iOS, and web support. Suvo can test on a Motorola Edge 60 Pro; Rohan has an iPhone. Rohan is taking design; approved visual directions are required before implementing custom finance screens. The current UI is a minimal shell and parser demo.
-
-The shared Expo project and builds will belong to Rohan's planned Expo organization. It has not been created yet; organization access and project linking must be verified before shared build setup. This build-service account is separate from the app's local-only financial data architecture.
+Mobile use is primary, with Android, iOS, and web support. Suvo can test on a Motorola Edge 60 Pro; Rohan has an iPhone. The user asked to settle visual directions before implementing custom finance screens. Connected manual-first screens are under verification; iOS implementation and physical-device verification belong to Rohan.
 
 ## Capabilities and Constraints
 
+Delivery follows [the approved manual-first roadmap](docs/mvp-roadmap.md): ledger and everyday finance workflows first, with native imports validated separately.
+
 - Confirmed initial scope: expenses and income, budgets, and bills. Manual entry, receipt scanning, automatic Android SMS parsing, and connected email parsing are confirmed entry requirements. Budget and bill workflows remain in scope even though the preserved Rohan proposal schedules them later.
-- Current implementation: Expo Router tabs with a simple home screen, paste-to-parse SMS demonstration, placeholder Insights/Budgets/Settings screens, and a pure TypeScript parser that returns transaction, review, or ignored results. There is no persisted ledger or CRUD, native SMS capture, receipt OCR, or email integration.
-- Agreed delivery sequence (Suvo, 2026-10-06): the first usable MVP is manual-first, with a local ledger, expense/income CRUD, monthly totals, simple monthly category budgets, bill due/paid tracking, reviewed paste-to-import SMS, and CSV export. Automatic SMS is a later optional import and does not block this milestone. Android/iOS feasibility experiments run alongside ledger work. Receipt OCR, connected email and encrypted backup/restore follow separately; they are not removed from the product direction. See [the MVP roadmap](docs/mvp-roadmap.md).
+- Confirmed desired outcomes, not yet implemented: an easy-to-understand financial overview, identification of overspending, and month-end money estimates. The current direction is to show both projected total available account balance and money left from this month's income, clearly distinguished. The overspending baseline, calculation rules and required inputs remain to be agreed; do not assume complete account balances or income/bill schedules are available.
+- Current implementation: connected Home, manual-entry/edit/delete, paste review/save, Budgets/Bills, Insights and Settings screens use the shared local data API. Account/category management and CSV destinations are connected. New entries require only an amount; date defaults to today and category/account/note stay behind Add details. More controls, the full entry list, deeper insights and calculation explanations are collapsed by default. Native SMS capture, receipt OCR, email and encrypted backup remain future work. A connected screen is not evidence that every platform flow passes; see [UI validation](docs/v1-ui.md) and [the v1 data contract](docs/v1-data-layer.md).
 - Current architecture direction: local-only financial data with no app accounts or hosted backend. Storage, export, backup, and retention details need implementation. The email provider, requested permissions, and a local-only connection flow are undecided.
 - One upstream Worklets peer-range warning remains under review, tracked in [issue #3](https://github.com/RohanGupta15/finance-bro/issues/3), despite the Expo install check and Expo Doctor passing.
 - Android SMS access needs native integration and user consent. iOS does not let apps read a user's general SMS inbox; an iOS import path is undecided. Google Play SMS permission policy is relevant only if distributing through Google Play. Store setup is deferred. See [Google Play SMS and Call Log permissions](https://support.google.com/googleplay/android-developer/answer/10208820) and [Apple SMS filtering](https://developer.apple.com/documentation/identitylookup/sms-and-mms-message-filtering).
@@ -37,10 +39,16 @@ The shared Expo project and builds will belong to Rohan's planned Expo organizat
 
 ## Evidence on Hand
 
-The repository contains the Expo app shell and an SMS parser package with parser code, tests, and fixtures. A frozen install and `pnpm check` passed, including type checking, lint, and 31 parser tests. The Expo install check, Expo Doctor (20/20), and Android/iOS/web export also passed locally. Browser rendering showed Home and four tab items; Home-to-Settings navigation and one synthetic SMS parse displaying a ₹450 SWIGGY expense were observed. The other tabs have not had a full click-through. No physical Android or iOS device or signed native build has been tested. Remote CI and CodeQL results are published on pull requests; use those checks for the current revision.
+Backend migration, persistence, validation and protected paste-save evidence is recorded separately in [Android ledger validation](docs/android-ledger-validation.md) and [the v1 data contract](docs/v1-data-layer.md). Those results do not prove the connected screens.
+
+On 2026-10-08, the connected Motorola Edge 60 Pro running Android 17 rendered the simplified Home, Budgets, Insights and Settings with an isolated fictional ledger. Add opened with the decimal keyboard; a ₹12.34 expense saved without optional details and increased monthly spending from ₹7,598.00 to ₹7,610.34. Save remained above the keyboard after the Android layout fix. More insights revealed the six-month chart. Further UI flows and iOS remain pending; see [UI validation](docs/v1-ui.md). Current CI belongs to the exact PR revision.
 
 ## Product Principles
 
+- Deliver future-tech, bleeding-edge functionality by excelling at speed, offline reliability and privacy within the approved manual-first v1 scope. Preserve exact money handling, protected corrections, clear persistence/error states and low-effort understanding. Use the newest compatible tooling; additional advanced capabilities require a confirmed user problem and scope decision.
+- Approved visual baseline: Rohan's Ink and Stamps system in [PR #33](https://github.com/Starforge-lab/finance-bro/pull/33). Follow Rohan's exact screen compositions, components, typography, colors and spacing. The 2026-10-07 correction rejects an independent reinterpretation; changes must preserve the reference design, with truthful manual-first data and the retired Quicksave branding removed. Build the future-tech feel through polished motion, purposeful haptics and fast feedback; respect reduced-motion preferences. Mockups guide the connected screens; fictional mockup numbers and unsupported projections must never become product claims.
+- Design for low energy and limited attention: the user explicitly requests minimal text, minimal overwhelm and minimal friction. First glance must explain the purpose. Prioritize open, understand spending, Add, amount, Save. Optional details and management controls stay behind a tap; retain validation and recoverable errors.
+- Explain overspending and estimates in plain language. Distinguish recorded facts from projections and make missing data or assumptions clear.
 - Keep everyday expense, income, budget, and bill workflows in the initial product scope.
 - Preserve manual entry alongside automated imports so users can record transactions without granting message access.
 - Keep financial records local and avoid app accounts or a hosted backend in the current architecture.

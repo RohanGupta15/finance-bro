@@ -2,22 +2,22 @@
 
 Guidance for Claude Code (and humans) working in this repo. Product context is in [README.md](README.md); workflow is in [CONTRIBUTING.md](CONTRIBUTING.md). This file records **decisions and conventions** — keep it current when a decision changes.
 
-> **Status:** scaffolded. Monorepo, Expo SDK 58 app shell (4 tabs) and the parser core with the generic rule are in place. Not built yet: institution rules (waiting on real samples), DB, native SMS/App Intent modules, ledger UI.
+> **Status:** Expo app shell and generic SMS parser, plus the local manual-first data layer: validated entry, account/category management, transaction queries/corrections, India-month totals, budgets, bills, CSV content and keyed paste review/save. See [the v1 data contract](docs/v1-data-layer.md) for scope, rules and verification gates. Connected manual-first screens and Android/web CSV destinations are in implementation and verification. Follow the exact Ink and Stamps references in DESIGN.md and docs/design/screens; the scrapped Quicksave name is not current branding. Native SMS/App Intent modules remain separate feasibility work. Rohan owns all iOS-specific implementation and real-device verification.
 
 ## What we're building
 
-A mobile-first personal expense tracker for India. The first usable MVP is manual-first with reviewed paste-to-import SMS; automatic on-device bank / UPI / card / wallet SMS logging follows validated native experiments. Users can add, edit, delete and re-categorise transactions without message permissions. Working name `finance-bro`; the product name is decided after v1. See [the agreed MVP roadmap](docs/mvp-roadmap.md).
+A mobile-first personal expense tracker for India. USP: it reads bank / UPI / card / wallet transaction SMS on-device and logs debits and credits automatically. Users can still add, edit, delete and re-categorise anything manually. Effortless, minimal taps, no setup friction. Working name `finance-bro`; the product name is decided after v1.
 
 ## Stack
 
 - **Expo SDK 58 (beta)**, React Native 0.88 RC, TypeScript (strict), New Architecture only.
 - **Development build** via `expo-dev-client` — never Expo Go (we ship custom native code).
 - **Expo Router** (tabs: Home, Insights, Budgets, Settings; add/edit as modal sheets).
-- Planned **expo-sqlite + Drizzle ORM** (migrations, `useLiveQuery`). The DB is the source of truth.
+- **expo-sqlite + Drizzle ORM** for the local ledger, with generated migrations. The DB is the source of truth; `useLiveQuery` integration remains planned.
 - Planned **Zustand** for small UI-only state. No React Query (there is no server).
 - **@expo/ui** native components where mature, Reanimated + haptics for motion.
 - **pnpm workspaces + Turborepo**, `node-linker=hoisted` (try isolated installs later). Turbo's auto-written `AGENTS.md` is disabled (`agentGuidance: false`); before changing Turbo config, read the docs bundled in `node_modules/turbo/docs/`, since Turbo changes between versions.
-- **Vitest** for packages; Jest + React Native Testing Library are planned for app tests. **EAS Build** for binaries.
+- **Vitest** for packages and **node:test + node:sqlite** for ledger persistence/migration checks. Jest + React Native Testing Library are planned for screen tests. **EAS Build** for binaries.
 
 ### Expo skills — use them, don't rely on memory
 
@@ -131,8 +131,6 @@ Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com
 
 ### Android SMS (`modules/sms-reader`, Kotlin)
 
-Planned after the manual-first MVP; validate these assumptions in the bounded Android experiment before building the full pipeline.
-
 - Permissions `RECEIVE_SMS`, `READ_SMS`, `POST_NOTIFICATIONS` are added by the module's config plugin.
 - Manifest `BroadcastReceiver` for `SMS_RECEIVED` (works when the app is killed). It pre-filters cheaply on sender/keywords and enqueues the message reference.
 - A **Headless JS** task runs the TS parser immediately and posts a notification ("₹450 · Swiggy · Food — tap to change"). *Unproven on the New Architecture → spike first; fallback is draining the queue on app open.*
@@ -140,8 +138,6 @@ Planned after the manual-first MVP; validate these assumptions in the bounded An
 - JS API: `requestPermission()`, `queryInbox({ sinceId, limit })`, `drainQueue()`, `onSms` event.
 
 ### iOS (`modules/transaction-intent`, Swift)
-
-Proposed implementation, not a demonstrated capability or MVP prerequisite. Validate the automation, background execution and storage access on a real iPhone first; fall back to manual entry and paste if it is not viable.
 
 - App Intent `LogTransactionFromSMS(text: String)`, `openAppWhenRun = false`, returns a confirmation dialog ("Logged ₹450 · Swiggy").
 - **Parsing runs inside the intent** using the same `sms-parser` compiled to a single JS bundle and executed in `JavaScriptCore`. One parser, both platforms. The intent writes to the app's SQLite DB.
@@ -180,22 +176,27 @@ Every schema change ships a Drizzle migration, tested against a seeded DB.
 
 ## UX direction
 
-Inspired by [Sushi](https://github.com/jerameel/sushi) — inspiration, not a template:
-- Big total balance as the header, account cards in a horizontal row, date-grouped transaction feed with signed, colour-coded amounts (green credit / red debit), one primary "new transaction" action, filter chips (All / Debit / Credit), light + dark themes, a calm warm accent.
+The visual system is **"Ink and Stamps"** (C2 light, C3 dark), documented in [DESIGN.md](DESIGN.md) with tokens in `apps/mobile/src/constants/theme.ts`. Read DESIGN.md before building any screen. In short: ink outlines on paper, money in Space Mono, colour only in small category stamps plus one rationed highlighter yellow, ink-only charts, and red only for over-budget or destructive actions (not for ordinary debits).
+
+Behaviour was originally inspired by [Sushi](https://github.com/jerameel/sushi) (inspiration, not a template):
+- A date-grouped transaction feed, one primary "new transaction" action, light + dark themes.
 - Where we go further: auto-logged entries with one-tap category fix, number-pad-first manual add (~3 s), a Review inbox, and insights that state facts ("Food is 32% higher than last month") rather than chart walls.
 
 ## Scope
 
-The confirmed initial finance workflows include expenses/income, budgets and bills; see PRODUCT.md. Receipt scanning and connected email are confirmed later entry requirements; providers and their fit with the local-only design remain open. The existing code is a parser and shell, not this full roadmap.
+Follow [the manual-first roadmap](docs/mvp-roadmap.md) for delivery order and [PRODUCT.md](PRODUCT.md) for confirmed scope. Native import experiments do not block the usable manual-first MVP.
 
-- **First usable MVP (approved by Suvo, 2026-10-06):** local ledger and categories; manual expense/income add/edit/delete/re-categorise; Home feed and monthly totals; reviewed paste-to-import SMS with duplicate protection and preserved corrections; monthly category budgets; bill due dates and paid/unpaid tracking; CSV export. Works without SMS permission. Custom UI follows Rohan's approved designs. This is an implementation milestone, not authorization for store publishing.
-- **Automatic imports:** run Android/iOS feasibility experiments alongside ledger work, then implement proven paths as optional imports. Institution rules require anonymised samples and fixtures. Full native capture, backfill, Shortcuts onboarding and distribution flavours are not MVP blockers.
-- **Later capabilities:** receipt OCR, connected email and encrypted backup/restore after relevant provider/privacy decisions; merchant learning, app lock, category breakdown, home-screen widget, iOS share extension, advanced recurring detection, insights, search/filters, tags, split entries and custom category tree remain planned. Scheduling and release hardening are separate from this milestone.
+The confirmed initial finance workflows include expenses/income, budgets and bills; see PRODUCT.md. Receipt scanning and connected email are confirmed later entry requirements; providers and their fit with the local-only design remain open. The shared local business layer exists; connected screens are under verification. PRODUCT.md and roadmap issue #7 define the approved manual-first v1. The older automatic-import roadmap below is future work, not a v1 release gate.
+
+- **v1 (manual-first MVP):** validated manual expenses/income; local accounts/categories; month feed, recorded cash-flow totals and category breakdown; protected edits and soft deletion; transient paste-to-review import with keyed deduplication and explicit key-loss recovery; monthly category budgets; due/paid bill records; user-initiated CSV export. Shared Expo SQLite contract on Android/iOS/web. No automatic inbox import, forecast or bank balance claim. Rohan owns iOS implementation and device checks.
+- **Later import feasibility:** Android SMS live capture/catch-up/backfill (issue #16), iOS App Intents/Shortcuts (issue #17), additional bank parser fixtures, receipt scanning and connected email. Merchant learning, app lock and distribution flavors remain separate decisions/work.
+- **v1.1:** encrypted backup/restore, home-screen widget, iOS share extension.
+- **v2:** advanced recurring detection, insights, search/filters, tags, split entries, custom category tree.
 - **Out of scope:** user accounts, backend sync, Account Aggregator / bank linking, AI/ML, investments, bill-splitting with friends, multi-currency, ads.
 
 ## Known risks
 
-- SDK 58 beta / RN 0.88 RC: third-party lag (Drizzle expo-sqlite driver, Reanimated, `@expo/ui`), EAS image changes. Spike Headless JS (Android) and JSC-in-App-Intent (iOS) alongside ledger work; no calendar estimate is agreed.
+- SDK 58 beta / RN 0.88 RC: third-party lag (Drizzle expo-sqlite driver, Reanimated, `@expo/ui`), EAS image changes. Spike Headless JS (Android) and JSC-in-App-Intent (iOS) in week 1.
 - Play may deny SMS permissions → `play` flavour must stand on its own.
 - Bank SMS formats change without notice → Review inbox + fixture-driven rules.
 - iOS: verify on a real device that messages filtered into "Transactions"/"Unknown Senders" still trigger the automation.

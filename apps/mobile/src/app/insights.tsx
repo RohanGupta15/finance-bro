@@ -1,5 +1,5 @@
-import { PlaceholderScreen } from '@/components/placeholder-screen';
+import { Insights } from '@/screens/insights';
 
 export default function InsightsRoute() {
-  return <PlaceholderScreen title="Insights" note="Month summary and category breakdown land here in v1." />;
+  return <Insights />;
 }
