@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
+  Alert,
+  BackHandler,
   Keyboard,
+  KeyboardAvoidingView,
   Pressable,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,6 +13,7 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DuplicateReviewRequiredError, type DataLayer } from '@/db';
 import { transactionDirections, transactionKinds, transactionStatuses } from '@/db/schema';
@@ -86,7 +91,7 @@ function Choice({
   return (
     <Pressable
       accessibilityRole={accessibilityRole}
-      accessibilityState={{ checked: selected, selected, disabled }}
+      accessibilityState={{ checked: selected, disabled }}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
@@ -114,6 +119,7 @@ export function PasteForm({
   const colors = useTheme();
   const dark = useColorScheme() === 'dark';
   const [sender, setSender] = useState('');
+  const [senderOpen, setSenderOpen] = useState(false);
   const [body, setBody] = useState('');
   const [prepared, setPrepared] = useState<PastePreparation | null>(null);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
@@ -134,6 +140,8 @@ export function PasteForm({
   const [outcome, setOutcome] = useState<SaveOutcome | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [discardPromptOpen, setDiscardPromptOpen] = useState(false);
   const busyRef = useRef(false);
   const mountedRef = useRef(true);
 
@@ -174,9 +182,11 @@ export function PasteForm({
   const consistentIncome = kind !== 'income' || direction === 'credit';
   const selectedCategoryIsValid = categoryId === null || availableCategories.some((category) => category.id === categoryId);
   const canPrepare = body.trim().length > 0 && !busy;
-  const canSave = prepared?.kind === 'needs-review' && amountValue.amountPaise !== null &&
-    Boolean(direction && kind && status && parsedDate) && consistentKind && consistentIncome && selectedCategoryIsValid &&
-    (!duplicateReviewRequired || riskAcknowledged) && !busy;
+  const reviewFieldsValid = Boolean(prepared?.kind === 'needs-review' && amountValue.amountPaise !== null &&
+    direction && kind && status && parsedDate && consistentKind && consistentIncome && selectedCategoryIsValid);
+  const detailsVisible = detailsOpen || !reviewFieldsValid;
+  const canSave = reviewFieldsValid && (!duplicateReviewRequired || riskAcknowledged) && !busy;
+  const dirty = !outcome && (body.length > 0 || sender.length > 0 || prepared?.kind === 'needs-review');
 
   function resetReview() {
     setPrepared(null);
@@ -197,6 +207,9 @@ export function PasteForm({
     setExcludeFromStats(false);
     setRiskAcknowledged(false);
     setRiskRequiredAfterError(false);
+    setDetailsOpen(false);
+    setSenderOpen(false);
+    setDiscardPromptOpen(false);
   }
 
   async function prepare() {
@@ -228,14 +241,31 @@ export function PasteForm({
       setRiskRequiredAfterError(false);
       if (result.kind === 'needs-review') {
         const candidate = result.candidate;
-        setAmountText(safeAmountText(candidate?.amountPaise));
+        const nextAmount = safeAmountText(candidate?.amountPaise);
+        const nextDate = safeDateText(candidate?.occurredAt);
+        let candidateIsComplete = Boolean(
+          candidate?.direction && candidate.kind && candidate.status && nextAmount && nextDate &&
+          (candidate.kind !== 'expense' || candidate.direction === 'debit') &&
+          (candidate.kind !== 'income' || candidate.direction === 'credit'),
+        );
+        try {
+          if (candidateIsComplete) {
+            parseInrAmount(nextAmount);
+            parseIndiaDate(nextDate);
+          }
+        } catch {
+          candidateIsComplete = false;
+        }
+        setDetailsOpen(!candidateIsComplete);
+        setAmountText(nextAmount);
         setDirection(candidate?.direction ?? '');
         setKind(candidate?.kind ?? '');
         setStatus(candidate?.status ?? '');
-        setDateText(safeDateText(candidate?.occurredAt));
+        setDateText(nextDate);
         setMerchant(candidate?.counterparty ?? candidate?.vpa ?? '');
         setReference(candidate?.upiRef ?? '');
       }
+      setSenderOpen(false);
       setSender('');
       setBody('');
       Keyboard.dismiss();
@@ -306,13 +336,38 @@ export function PasteForm({
     }
   }
 
-  function cancel() {
+  const discard = useCallback(() => {
     if (busyRef.current) return;
     setSender('');
     setBody('');
     resetReview();
     onCancel();
-  }
+  }, [onCancel]);
+
+  const requestCancel = useCallback(() => {
+    if (busyRef.current) return;
+    if (!dirty) {
+      discard();
+      return;
+    }
+    if (Platform.OS === 'web') {
+      setDiscardPromptOpen(true);
+      return;
+    }
+    Alert.alert('Discard this paste?', 'Your message and review will be lost.', [
+      { text: 'Keep editing', style: 'cancel' },
+      { text: 'Discard', style: 'destructive', onPress: discard },
+    ]);
+  }, [dirty, discard]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      requestCancel();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [requestCancel]);
 
   function changeDirection(value: Direction) {
     setDirection(value);
@@ -348,220 +403,246 @@ export function PasteForm({
   ];
 
   return (
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>Paste a bank message</Text>
-          <Text style={[styles.bodyCopy, { color: colors.textSecondary }]}>Review every detail before it is saved on this device.</Text>
-        </View>
-
-        {!prepared ? (
-          <View style={[styles.panel, { backgroundColor: colors.backgroundElement, borderColor: colors.border, shadowColor: dark ? 'transparent' : colors.shadow }]}>
-            <Field label="Sender (optional)" hint="A bank name or message header helps identify repeat pastes.">
-              <TextInput
-                accessibilityLabel="Message sender, optional"
-                autoCapitalize="characters"
-                autoCorrect={false}
-                editable={!busy}
-                onChangeText={setSender}
-                placeholder="For example, HDFCBK"
-                placeholderTextColor={colors.textSecondary}
-                returnKeyType="next"
-                style={inputStyle}
-                value={sender}
-              />
-            </Field>
-            <Field label="Message text" hint="The message is used for this review, then cleared. It is never stored as a message.">
-              <TextInput
-                accessibilityLabel="Paste bank message text"
-                autoCapitalize="sentences"
-                autoCorrect={false}
-                editable={!busy}
-                multiline
-                onChangeText={setBody}
-                placeholder="Paste the bank message here"
-                placeholderTextColor={colors.textSecondary}
-                scrollEnabled={false}
-                style={[...inputStyle, styles.messageInput]}
-                textAlignVertical="top"
-                value={body}
-              />
-            </Field>
-            {error ? <Text accessibilityRole="alert" style={[styles.error, { color: colors.over }]}>{error}</Text> : null}
-            <View style={styles.actions}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ disabled: !canPrepare, busy }}
-                disabled={!canPrepare}
-                onPress={prepare}
-                style={({ pressed }) => [styles.primaryButton, { backgroundColor: colors.accent, borderColor: colors.border, opacity: !canPrepare ? 0.45 : pressed ? 0.78 : 1 }]}>
-                <Text style={[styles.primaryLabel, { color: colors.onAccent }]}>{busy ? 'Reading…' : 'Read message'}</Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ disabled: busy }}
-                disabled={busy}
-                onPress={cancel}
-                style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border, opacity: busy ? 0.45 : pressed ? 0.7 : 1 }]}>
-                <Text style={[styles.secondaryLabel, { color: colors.text }]}>Cancel</Text>
-              </Pressable>
-            </View>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          automaticallyAdjustKeyboardInsets
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag">
+          <View style={styles.header}>
+            <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>Paste a bank message</Text>
           </View>
-        ) : prepared.kind === 'ignored' ? (
-          <View style={[styles.panel, { backgroundColor: colors.backgroundElement, borderColor: colors.border, shadowColor: dark ? 'transparent' : colors.shadow }]}>
-            <Text accessibilityRole="header" style={[styles.sectionTitle, { color: colors.text }]}>Nothing to save</Text>
-            <Text style={[styles.bodyCopy, { color: colors.textSecondary }]}>This message was classified as {prepared.reason.replaceAll('_', ' ')}. It will not be added to your ledger.</Text>
+
+          {!prepared ? (
+            <View style={[styles.panel, { backgroundColor: colors.backgroundElement, borderColor: colors.border, shadowColor: dark ? 'transparent' : colors.shadow }]}>
+              <Field label="Message text" hint="Used for this review, then cleared.">
+                <TextInput
+                  accessibilityLabel="Paste bank message text"
+                  autoCapitalize="sentences"
+                  autoCorrect={false}
+                  editable={!busy}
+                  multiline
+                  onChangeText={setBody}
+                  placeholder="Paste the bank message here"
+                  placeholderTextColor={colors.textSecondary}
+                  scrollEnabled={false}
+                  style={[...inputStyle, styles.messageInput]}
+                  textAlignVertical="top"
+                  value={body}
+                />
+              </Field>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ expanded: senderOpen, disabled: busy }}
+                disabled={busy}
+                onPress={() => setSenderOpen((open) => !open)}
+                style={({ pressed }) => [styles.detailsToggle, { borderColor: colors.border, opacity: busy ? 0.45 : pressed ? 0.7 : 1 }]}>
+                <Text style={[styles.detailsToggleText, { color: colors.text }]}>{senderOpen ? 'Hide sender' : 'Add sender'}</Text>
+              </Pressable>
+              {senderOpen ? (
+                <Field label="Sender (optional)">
+                  <TextInput
+                    accessibilityLabel="Message sender, optional"
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    editable={!busy}
+                    onChangeText={setSender}
+                    placeholder="Bank name"
+                    placeholderTextColor={colors.textSecondary}
+                    returnKeyType="next"
+                    style={inputStyle}
+                    value={sender}
+                  />
+                </Field>
+              ) : null}
+            </View>
+          ) : prepared.kind === 'ignored' ? (
+            <View style={[styles.panel, { backgroundColor: colors.backgroundElement, borderColor: colors.border, shadowColor: dark ? 'transparent' : colors.shadow }]}>
+              <Text accessibilityRole="header" style={[styles.sectionTitle, { color: colors.text }]}>Nothing to save</Text>
+              <Text style={[styles.bodyCopy, { color: colors.textSecondary }]}>This message was not added ({prepared.reason.replaceAll('_', ' ')}).</Text>
+            </View>
+          ) : outcome ? (
+            <View style={[styles.panel, { backgroundColor: colors.backgroundElement, borderColor: colors.border, shadowColor: dark ? 'transparent' : colors.shadow }]}>
+              <Text accessibilityRole="header" style={[styles.sectionTitle, { color: colors.text }]}>
+                {outcome === 'inserted' ? 'Saved on this device' : 'Already handled'}
+              </Text>
+              <Text style={[styles.bodyCopy, { color: colors.textSecondary }]}>
+                {outcome === 'inserted'
+                  ? 'Saved in your ledger. Message text cleared.'
+                  : 'This paste was saved or deleted before. Nothing was added or changed.'}
+              </Text>
+            </View>
+          ) : (
+            <View style={[styles.panel, { backgroundColor: colors.backgroundElement, borderColor: colors.border, shadowColor: dark ? 'transparent' : colors.shadow }]}>
+              <Text accessibilityRole="header" style={[styles.sectionTitle, { color: colors.text }]}>Review transaction</Text>
+              {prepared.candidate ? (
+                <View style={[styles.summary, { borderBottomColor: colors.rule }]}>
+                  <Text style={[styles.summaryAmount, { color: colors.text }]}>
+                    {direction === 'credit' ? '+' : '−'}{amountValue.amountPaise === null ? 'Amount needs correction' : money(amountValue.amountPaise)}
+                  </Text>
+                  <Text style={[styles.bodyCopy, { color: colors.textSecondary }]}>
+                    {merchant.trim() || 'Merchant not identified'} · {kind ? displayKind(kind) : 'Type needed'} · {status || 'Status needed'}
+                  </Text>
+                  <Text style={[styles.hint, { color: colors.textSecondary }]}>
+                    {dateText ? 'India date ' + dateText : 'Date needs review'}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={[styles.bodyCopy, { color: colors.textSecondary }]}>No transaction details were found. Fill in the required fields.</Text>
+              )}
+
+              <Field label="Amount (₹)" hint={amountValue.message}>
+                <TextInput
+                  accessibilityLabel="Transaction amount in rupees"
+                  editable={!busy}
+                  keyboardType="decimal-pad"
+                  onChangeText={setAmountText}
+                  placeholder="0.00"
+                  placeholderTextColor={colors.textSecondary}
+                  selectTextOnFocus
+                  style={inputStyle}
+                  value={amountText}
+                />
+              </Field>
+
+              {reviewFieldsValid ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: detailsVisible, disabled: busy }}
+                  disabled={busy}
+                  onPress={() => {
+                    if (detailsVisible) Keyboard.dismiss();
+                    setDetailsOpen(!detailsVisible);
+                  }}
+                  style={({ pressed }) => [styles.detailsToggle, { borderColor: colors.border, opacity: busy ? 0.45 : pressed ? 0.7 : 1 }]}>
+                  <Text style={[styles.detailsToggleText, { color: colors.text }]}>{detailsVisible ? 'Hide details' : 'Edit details'}</Text>
+                </Pressable>
+              ) : null}
+
+              {detailsVisible ? <View style={styles.details}>
+                <Field label="Direction">
+                  <View style={styles.choices}>
+                    {directions.map((value) => <Choice key={value} label={value === 'debit' ? 'Debit' : 'Credit'} selected={direction === value} disabled={busy} onPress={() => changeDirection(value)} />)}
+                  </View>
+                </Field>
+                <Field label="Transaction type">
+                  <View style={styles.choices}>
+                    {kinds.map((value) => <Choice key={value} label={displayKind(value)} selected={kind === value} disabled={busy} onPress={() => changeKind(value)} />)}
+                  </View>
+                  {!consistentKind || !consistentIncome ? <Text style={[styles.error, { color: colors.over }]}>Expenses must be debits and income must be credits.</Text> : null}
+                </Field>
+                <Field label="Status">
+                  <View style={styles.choices}>
+                    {statuses.map((value) => <Choice key={value} label={value} selected={status === value} disabled={busy} onPress={() => setStatus(value)} />)}
+                  </View>
+                </Field>
+                <Field label="Transaction date">
+                  <TextInput
+                    accessibilityLabel="Transaction date in India calendar, year month day"
+                    editable={!busy}
+                    keyboardType="numbers-and-punctuation"
+                    onChangeText={setDateText}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={colors.textSecondary}
+                    style={inputStyle}
+                    value={dateText}
+                  />
+                  {dateText && !parsedDate ? <Text style={[styles.error, { color: colors.over }]}>Enter a real date as YYYY-MM-DD.</Text> : null}
+                </Field>
+                <Field label="Merchant or person">
+                  <TextInput accessibilityLabel="Merchant or person" editable={!busy} onChangeText={setMerchant} placeholder="Optional" placeholderTextColor={colors.textSecondary} style={inputStyle} value={merchant} />
+                </Field>
+                <Field label="Category">
+                  <View style={styles.choices}>
+                    <Choice label="No category" selected={categoryId === null} disabled={busy} onPress={() => setCategoryId(null)} />
+                    {availableCategories.map((category) => (
+                      <Choice key={category.id} label={category.name} selected={categoryId === category.id} disabled={busy} onPress={() => setCategoryId(category.id)} />
+                    ))}
+                  </View>
+                  {availableCategories.length === 0 ? <Text style={[styles.hint, { color: colors.textSecondary }]}>No matching categories are available yet.</Text> : null}
+                  {!selectedCategoryIsValid ? <Text style={[styles.error, { color: colors.over }]}>Choose a category that matches this transaction type.</Text> : null}
+                </Field>
+                <Field label="Account">
+                  <View style={styles.choices}>
+                    <Choice label="No account" selected={accountId === null} disabled={busy} onPress={() => setAccountId(null)} />
+                    {accounts.map((account) => {
+                      const detail = [account.institution, account.last4 ? '••' + account.last4 : null].filter(Boolean).join(' · ');
+                      return <Choice key={account.id} label={detail ? account.name + ' · ' + detail : account.name} selected={accountId === account.id} disabled={busy} onPress={() => setAccountId(account.id)} />;
+                    })}
+                  </View>
+                  {accounts.length === 0 ? <Text style={[styles.hint, { color: colors.textSecondary }]}>No accounts set up; leave blank.</Text> : null}
+                </Field>
+                <Field label="UPI reference (optional)">
+                  <TextInput accessibilityLabel="UPI reference, optional" autoCapitalize="none" autoCorrect={false} editable={!busy} onChangeText={setReference} placeholder="Reference number" placeholderTextColor={colors.textSecondary} style={inputStyle} value={reference} />
+                </Field>
+                <Field label="Note (optional)">
+                  <TextInput accessibilityLabel="Transaction note, optional" editable={!busy} multiline onChangeText={setNote} placeholder="Add context for yourself" placeholderTextColor={colors.textSecondary} style={[...inputStyle, styles.noteInput]} textAlignVertical="top" value={note} />
+                </Field>
+
+                <Pressable
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: excludeFromStats, disabled: busy }}
+                  disabled={busy}
+                  onPress={() => setExcludeFromStats((value) => !value)}
+                  style={styles.checkRow}>
+                  <View style={[styles.checkbox, { borderColor: colors.border, backgroundColor: excludeFromStats ? colors.accent : 'transparent' }]}>
+                    {excludeFromStats ? <View style={[styles.checkMark, { backgroundColor: colors.onAccent }]} /> : null}
+                  </View>
+                  <Text style={[styles.bodyCopy, { color: colors.text }]}>Exclude from totals</Text>
+                </Pressable>
+              </View> : null}
+
+              {duplicateReviewRequired ? (
+                <View style={[styles.warning, { borderTopColor: colors.rule }]}>
+                  <Text style={[styles.warningTitle, { color: colors.text }]}>Duplicate risk</Text>
+                  <Text style={[styles.bodyCopy, { color: colors.textSecondary }]}>Earlier pastes can’t be checked. Review every paste; duplicates may be added.</Text>
+                  <Pressable
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: riskAcknowledged, disabled: busy }}
+                    disabled={busy}
+                    onPress={() => setRiskAcknowledged((value) => !value)}
+                    style={styles.checkRow}>
+                    <View style={[styles.checkbox, { borderColor: colors.border, backgroundColor: riskAcknowledged ? colors.accent : 'transparent' }]}>
+                      {riskAcknowledged ? <View style={[styles.checkMark, { backgroundColor: colors.onAccent }]} /> : null}
+                    </View>
+                    <Text style={[styles.bodyCopy, { color: colors.text }]}>I understand; allow this save</Text>
+                  </Pressable>
+                </View>
+              ) : null}
+            </View>
+          )}
+        </ScrollView>
+
+        <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.rule }]}>
+          {error ? <Text accessibilityRole="alert" style={[styles.error, { color: colors.over }]}>{error}</Text> : null}
+          {discardPromptOpen ? (
+            <View style={styles.actions}>
+              <Text style={[styles.bodyCopy, { color: colors.text }]}>Discard this paste?</Text>
+              <View style={styles.actionRow}>
+                <Pressable accessibilityRole="button" onPress={() => setDiscardPromptOpen(false)} style={({ pressed }) => [styles.secondaryButton, styles.actionButton, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}>
+                  <Text style={[styles.secondaryLabel, { color: colors.text }]}>Keep editing</Text>
+                </Pressable>
+                <Pressable accessibilityRole="button" onPress={discard} style={({ pressed }) => [styles.primaryButton, styles.actionButton, { backgroundColor: colors.over, borderColor: colors.border, opacity: pressed ? 0.78 : 1 }]}>
+                  <Text style={[styles.primaryLabel, { color: colors.backgroundElement }]}>Discard</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : prepared?.kind === 'ignored' ? (
             <View style={styles.actions}>
               <Pressable accessibilityRole="button" disabled={busy} onPress={resetReview} style={({ pressed }) => [styles.primaryButton, { backgroundColor: colors.accent, borderColor: colors.border, opacity: busy ? 0.45 : pressed ? 0.78 : 1 }]}>
                 <Text style={[styles.primaryLabel, { color: colors.onAccent }]}>Paste another</Text>
               </Pressable>
-              <Pressable accessibilityRole="button" disabled={busy} onPress={cancel} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border, opacity: busy ? 0.45 : pressed ? 0.7 : 1 }]}>
+              <Pressable accessibilityRole="button" disabled={busy} onPress={discard} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border, opacity: busy ? 0.45 : pressed ? 0.7 : 1 }]}>
                 <Text style={[styles.secondaryLabel, { color: colors.text }]}>Done</Text>
               </Pressable>
             </View>
-          </View>
-        ) : outcome ? (
-          <View style={[styles.panel, { backgroundColor: colors.backgroundElement, borderColor: colors.border, shadowColor: dark ? 'transparent' : colors.shadow }]}>
-            <Text accessibilityRole="header" style={[styles.sectionTitle, { color: colors.text }]}>
-              {outcome === 'inserted' ? 'Saved on this device' : 'Already in your ledger'}
-            </Text>
-            <Text style={[styles.bodyCopy, { color: colors.textSecondary }]}>
-              {outcome === 'inserted'
-                ? 'The reviewed transaction is now in your local ledger. The message text was cleared.'
-                : 'A matching paste already exists. Your saved transaction and any corrections were left unchanged.'}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={complete}
-              style={({ pressed }) => [styles.primaryButton, { backgroundColor: colors.accent, borderColor: colors.border, opacity: pressed ? 0.78 : 1 }]}>
+          ) : outcome ? (
+            <Pressable accessibilityRole="button" onPress={complete} style={({ pressed }) => [styles.primaryButton, { backgroundColor: colors.accent, borderColor: colors.border, opacity: pressed ? 0.78 : 1 }]}>
               <Text style={[styles.primaryLabel, { color: colors.onAccent }]}>Done</Text>
             </Pressable>
-          </View>
-        ) : (
-          <View style={[styles.panel, { backgroundColor: colors.backgroundElement, borderColor: colors.border, shadowColor: dark ? 'transparent' : colors.shadow }]}>
-            <Text accessibilityRole="header" style={[styles.sectionTitle, { color: colors.text }]}>Review this message</Text>
-            {prepared.candidate ? (
-              <View style={[styles.summary, { borderBottomColor: colors.rule }]}>
-                <Text style={[styles.summaryAmount, { color: colors.text }]}>
-                  {direction === 'credit' ? '+' : '−'}{amountValue.amountPaise === null ? 'Amount needs correction' : money(amountValue.amountPaise)}
-                </Text>
-                <Text style={[styles.bodyCopy, { color: colors.textSecondary }]}>
-                  {merchant.trim() || 'Merchant not identified'} · {kind ? displayKind(kind) : 'kind needed'} · {status || 'status needed'}
-                </Text>
-                <Text style={[styles.hint, { color: colors.textSecondary }]}>
-                  {dateText ? `India date ${dateText}` : 'Transaction date needs review'}
-                  {categoryId ? ` · ${categories.find((item) => item.id === categoryId)?.name ?? 'Category selected'}` : ' · No category selected'}
-                </Text>
-              </View>
-            ) : (
-              <Text style={[styles.bodyCopy, { color: colors.textSecondary }]}>The message looks financial, but no transaction details were reliable enough to fill in. Enter every required field yourself.</Text>
-            )}
-
-            <Field label="Amount (₹)" hint={amountValue.message}>
-              <TextInput
-                accessibilityLabel="Transaction amount in rupees"
-                editable={!busy}
-                keyboardType="decimal-pad"
-                onChangeText={setAmountText}
-                placeholder="0.00"
-                placeholderTextColor={colors.textSecondary}
-                selectTextOnFocus
-                style={inputStyle}
-                value={amountText}
-              />
-            </Field>
-            <Field label="Direction">
-              <View style={styles.choices}>
-                {directions.map((value) => <Choice key={value} label={value === 'debit' ? 'Debit' : 'Credit'} selected={direction === value} disabled={busy} onPress={() => changeDirection(value)} />)}
-              </View>
-            </Field>
-            <Field label="Transaction type">
-              <View style={styles.choices}>
-                {kinds.map((value) => <Choice key={value} label={displayKind(value)} selected={kind === value} disabled={busy} onPress={() => changeKind(value)} />)}
-              </View>
-              {!consistentKind || !consistentIncome ? <Text style={[styles.error, { color: colors.over }]}>Expenses must be debits and income must be credits.</Text> : null}
-            </Field>
-            <Field label="Status" hint="Only posted entries count toward monthly totals.">
-              <View style={styles.choices}>
-                {statuses.map((value) => <Choice key={value} label={value} selected={status === value} disabled={busy} onPress={() => setStatus(value)} />)}
-              </View>
-            </Field>
-            <Field label="Transaction date" hint="The parser starts with the message arrival date. Correct it if the bank text says otherwise.">
-              <TextInput
-                accessibilityLabel="Transaction date in India calendar, year month day"
-                editable={!busy}
-                keyboardType="numbers-and-punctuation"
-                onChangeText={setDateText}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={colors.textSecondary}
-                style={inputStyle}
-                value={dateText}
-              />
-              {dateText && !parsedDate ? <Text style={[styles.error, { color: colors.over }]}>Enter a real date as YYYY-MM-DD.</Text> : null}
-            </Field>
-            <Field label="Merchant or person" hint="This is a short ledger label, not the original message.">
-              <TextInput accessibilityLabel="Merchant or person" editable={!busy} onChangeText={setMerchant} placeholder="Optional" placeholderTextColor={colors.textSecondary} style={inputStyle} value={merchant} />
-            </Field>
-            <Field label="Category">
-              <View style={styles.choices}>
-                <Choice label="No category" selected={categoryId === null} disabled={busy} onPress={() => setCategoryId(null)} />
-                {availableCategories.map((category) => (
-                  <Choice key={category.id} label={category.name} selected={categoryId === category.id} disabled={busy} onPress={() => setCategoryId(category.id)} />
-                ))}
-              </View>
-              {availableCategories.length === 0 ? <Text style={[styles.hint, { color: colors.textSecondary }]}>No matching categories are available yet.</Text> : null}
-              {!selectedCategoryIsValid ? <Text style={[styles.error, { color: colors.over }]}>Choose a category that matches this transaction type.</Text> : null}
-            </Field>
-            <Field label="Account">
-              <View style={styles.choices}>
-                <Choice label="No account" selected={accountId === null} disabled={busy} onPress={() => setAccountId(null)} />
-                {accounts.map((account) => {
-                  const detail = [account.institution, account.last4 ? `••${account.last4}` : null].filter(Boolean).join(' · ');
-                  return <Choice key={account.id} label={detail ? `${account.name} · ${detail}` : account.name} selected={accountId === account.id} disabled={busy} onPress={() => setAccountId(account.id)} />;
-                })}
-              </View>
-              {accounts.length === 0 ? <Text style={[styles.hint, { color: colors.textSecondary }]}>No accounts set up; you can leave this blank.</Text> : null}
-            </Field>
-            <Field label="UPI reference (optional)">
-              <TextInput accessibilityLabel="UPI reference, optional" autoCapitalize="none" autoCorrect={false} editable={!busy} onChangeText={setReference} placeholder="Reference number" placeholderTextColor={colors.textSecondary} style={inputStyle} value={reference} />
-            </Field>
-            <Field label="Note (optional)">
-              <TextInput accessibilityLabel="Transaction note, optional" editable={!busy} multiline onChangeText={setNote} placeholder="Add context for yourself" placeholderTextColor={colors.textSecondary} style={[...inputStyle, styles.noteInput]} textAlignVertical="top" value={note} />
-            </Field>
-
-            <Pressable
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: excludeFromStats, disabled: busy }}
-              disabled={busy}
-              onPress={() => setExcludeFromStats((value) => !value)}
-              style={styles.checkRow}>
-              <View style={[styles.checkbox, { borderColor: colors.border, backgroundColor: excludeFromStats ? colors.accent : 'transparent' }]}>
-                {excludeFromStats ? <View style={[styles.checkMark, { backgroundColor: colors.onAccent }]} /> : null}
-              </View>
-              <Text style={[styles.bodyCopy, { color: colors.text }]}>Exclude this transaction from monthly totals</Text>
-            </Pressable>
-
-            {duplicateReviewRequired ? (
-              <View style={[styles.warning, { borderTopColor: colors.rule }]}>
-                <Text style={[styles.warningTitle, { color: colors.text }]}>Duplicate checking needs your review</Text>
-                <Text style={[styles.bodyCopy, { color: colors.textSecondary }]}>The import key changed or older pasted entries cannot be checked with this key. Saving may add a transaction already in your ledger. This warning will also apply to future pastes because those earlier fingerprints cannot be checked.</Text>
-                <Pressable
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: riskAcknowledged, disabled: busy }}
-                  disabled={busy}
-                  onPress={() => setRiskAcknowledged((value) => !value)}
-                  style={styles.checkRow}>
-                  <View style={[styles.checkbox, { borderColor: colors.border, backgroundColor: riskAcknowledged ? colors.accent : 'transparent' }]}>
-                    {riskAcknowledged ? <View style={[styles.checkMark, { backgroundColor: colors.onAccent }]} /> : null}
-                  </View>
-                  <Text style={[styles.bodyCopy, { color: colors.text }]}>I understand and want to save despite the duplicate risk</Text>
-                </Pressable>
-              </View>
-            ) : null}
-
-            {error ? <Text accessibilityRole="alert" style={[styles.error, { color: colors.over }]}>{error}</Text> : null}
+          ) : prepared?.kind === 'needs-review' ? (
             <View style={styles.actions}>
               <Pressable
                 accessibilityRole="button"
@@ -569,28 +650,38 @@ export function PasteForm({
                 disabled={!canSave}
                 onPress={save}
                 style={({ pressed }) => [styles.primaryButton, { backgroundColor: colors.accent, borderColor: colors.border, opacity: !canSave ? 0.45 : pressed ? 0.78 : 1 }]}>
-                <Text style={[styles.primaryLabel, { color: colors.onAccent }]}>
-                  {busy ? 'Saving…' : duplicateReviewRequired ? 'Save with duplicate risk' : 'Save reviewed transaction'}
-                </Text>
+                <Text style={[styles.primaryLabel, { color: colors.onAccent }]}>{busy ? 'Saving…' : duplicateReviewRequired ? 'Save anyway' : 'Save transaction'}</Text>
               </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ disabled: busy }}
-                disabled={busy}
-                onPress={cancel}
-                style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border, opacity: busy ? 0.45 : pressed ? 0.7 : 1 }]}>
+              <Pressable accessibilityRole="button" accessibilityState={{ disabled: busy }} disabled={busy} onPress={requestCancel} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border, opacity: busy ? 0.45 : pressed ? 0.7 : 1 }]}>
                 <Text style={[styles.secondaryLabel, { color: colors.text }]}>Cancel</Text>
               </Pressable>
             </View>
-          </View>
-        )}
-      </ScrollView>
+          ) : (
+            <View style={styles.actions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !canPrepare, busy }}
+                disabled={!canPrepare}
+                onPress={prepare}
+                style={({ pressed }) => [styles.primaryButton, { backgroundColor: colors.accent, borderColor: colors.border, opacity: !canPrepare ? 0.45 : pressed ? 0.78 : 1 }]}>
+                <Text style={[styles.primaryLabel, { color: colors.onAccent }]}>{busy ? 'Reading…' : 'Review message'}</Text>
+              </Pressable>
+              <Pressable accessibilityRole="button" accessibilityState={{ disabled: busy }} disabled={busy} onPress={requestCancel} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border, opacity: busy ? 0.45 : pressed ? 0.7 : 1 }]}>
+                <Text style={[styles.secondaryLabel, { color: colors.text }]}>Cancel</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { width: '100%', maxWidth: 640, alignSelf: 'center', paddingHorizontal: Spacing.gutter, paddingTop: Spacing.four, paddingBottom: Spacing.tabBarClearance, gap: Spacing.three },
+  safeArea: { flex: 1 },
+  scroll: { flex: 1 },
+  content: { width: '100%', maxWidth: 640, alignSelf: 'center', paddingHorizontal: Spacing.gutter, paddingTop: Spacing.four, paddingBottom: Spacing.four, gap: Spacing.three },
   header: { gap: Spacing.two, marginBottom: Spacing.two },
   title: { ...Type.screenTitle },
   sectionTitle: { ...Type.sectionTitle },
@@ -619,6 +710,9 @@ const styles = StyleSheet.create({
   },
   messageInput: { minHeight: 128, paddingTop: 12 },
   noteInput: { minHeight: 88 },
+  details: { gap: Spacing.three },
+  detailsToggle: { minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center', paddingHorizontal: Spacing.three, borderWidth: Stroke.ink, borderRadius: Radius.pill },
+  detailsToggleText: { ...Type.body, fontFamily: Fonts.sansSemiBold },
   choices: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   choice: { minHeight: 44, maxWidth: '100%', justifyContent: 'center', paddingHorizontal: 14, borderWidth: Stroke.ink, borderRadius: Radius.pill },
   choiceText: { ...Type.label, flexShrink: 1, textTransform: 'capitalize' },
@@ -630,7 +724,10 @@ const styles = StyleSheet.create({
   checkRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   checkbox: { width: 24, height: 24, borderWidth: Stroke.ink, borderRadius: Radius.tile, alignItems: 'center', justifyContent: 'center' },
   checkMark: { width: 10, height: 10, borderRadius: 2 },
-  actions: { gap: Spacing.two, marginTop: Spacing.one },
+  footer: { width: '100%', maxWidth: 640, alignSelf: 'center', paddingHorizontal: Spacing.gutter, paddingTop: Spacing.two, paddingBottom: Platform.OS === 'web' ? Spacing.tabBarClearance : Spacing.two, borderTopWidth: Stroke.hairline, gap: Spacing.two },
+  actions: { gap: Spacing.two },
+  actionRow: { flexDirection: 'row', gap: Spacing.two },
+  actionButton: { flex: 1 },
   primaryButton: { minHeight: 52, paddingHorizontal: Spacing.three, alignItems: 'center', justifyContent: 'center', borderWidth: Stroke.ink, borderRadius: Radius.card, shadowOffset: { width: 2, height: 3 }, shadowOpacity: 0.18, shadowRadius: 0 },
   primaryLabel: { ...Type.rowTitle },
   secondaryButton: { minHeight: 48, paddingHorizontal: Spacing.three, alignItems: 'center', justifyContent: 'center', borderWidth: Stroke.ink, borderRadius: Radius.pill },
