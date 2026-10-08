@@ -45,6 +45,14 @@ The accessibility checkpoint adds explicit web pressed/expanded/busy and progres
 
 These are targeted keyboard/accessibility-tree checks, not a complete screen-reader or large-text certification. The local screenshot contains fictional data and is not published to GitHub.
 
+## Requested visual demo
+
+On 2026-10-08, the user requested seeded data to inspect the full visuals and confirmed the development app would not be used for real finances until later. The development phone's ledger now retains an explicitly seeded fictional fixture: 31 entries across six months, two demo accounts, seven categories, six monthly budgets and five bills. Current-month recorded income is ₹85,000.00, spending ₹34,823.00 and combined budget remaining ₹6,177.00; these are demonstration records, not bank balances or forecasts. Three recent entries fill the fanned cards; all six expense categories have activity. Shopping is over its limit; the fixture includes a refund and pending/excluded/transfer records that do not count as spending, plus upcoming, overdue and paid bills.
+
+The reusable fixture in `apps/mobile/src/dev/seed-demo.ts` is not called by normal startup. It uses the existing validated data API inside one transaction. Its final transaction ID prevents repeat seeds even if a demo entry was edited or deleted. Two tests cover the seed, six-month history, totals, duplicate prevention, protected edits/deletions and rollback/retry after a simulated storage failure. The one-time development hook was restored after seeding. The fictional records were intentionally retained at the user's request; earlier isolated QA databases remain removed.
+
+Physical Android checks observed populated Home, Budgets, the six-month Insights chart and Settings after restart. Home was left open for the user. Local development screenshots are not published to GitHub. Project checks now include 30 mobile/data tests plus 31 parser tests; all passed, along with typecheck and lint.
+
 ## Remaining release gates
 
 - Complete Android ambiguous/ignored/corrected/deleted replay and failure-recovery checks; repeat browser corrected/deleted replay after the latest disclosure refinements.
