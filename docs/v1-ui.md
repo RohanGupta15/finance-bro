@@ -25,11 +25,19 @@ The temporary source hook was restored, the isolated database and device test ca
 
 The current exported browser build was exercised on 2026-10-08 with fictional data: amount-only form, rejection of ₹12.345 with input retained, successful ₹12.34 save, immediate spending update from ₹550.25 to ₹562.59, and persistence after reload. Earlier browser checks covered edit, a category budget and paid bill, and CSV download; those broader flows preceded the latest disclosure refinements.
 
-Frozen install, pnpm check (28 mobile/data and 31 parser tests), Expo dependency check, Expo Doctor (20/20), Android/iOS/web bundle exports and git diff --check passed for this checkpoint. CI and native APK checks remain revision-specific.
+The calmer paste flow was also exercised with fictional data on 2026-10-08:
+
+- Browser: ambiguous input kept required fields open and Save disabled until corrected; the corrected entry survived reload. OTP input offered no Save and Paste another cleared the input. A previously deleted paste returned Already handled without adding a record. Checked choices exposed their selected state, and Keep editing retained an unsaved message.
+- Before the disclosure refinements, browser replay tests confirmed that re-pasting preserved a corrected amount and did not resurrect a deleted entry. These replay cases still need repetition at the final release revision.
+- Android: a valid paste saved. Losing only an isolated test fingerprint key exposed Duplicate risk outside optional details, blocked Save until acknowledged, and allowed an explicitly acknowledged save. Back offered a discard dialog; Keep editing retained the prepared transaction.
+- The development APK from run 37776174519, built at 4f920d0, installed successfully and retained the isolated fictional ledger. Current source was served through Metro. A fresh restart after the navigation-readiness fix rendered Home without the earlier navigation initialization error.
+- The isolated key was deleted and its absence confirmed; the isolated database and device captures were removed. Both temporary source hooks were restored. Normal financial records and fingerprint keys were not inspected or changed.
+
+After restoring normal source configuration, frozen install, pnpm check (28 mobile/data and 31 parser tests), Expo dependency check, Expo Doctor (20/20), Android/iOS/web bundle exports and git diff --check passed again. CI and native APK checks remain revision-specific.
 
 ## Remaining release gates
 
-- Exercise the current paste review UI on web and Android: valid, ambiguous, ignored, corrected/deleted replay and key-loss acknowledgement.
+- Complete Android ambiguous/ignored/corrected/deleted replay and failure-recovery checks; repeat browser corrected/deleted replay after the latest disclosure refinements.
 - Complete the current entry/edit/delete, discard, reload, failure recovery, accounts/categories, budget/bill mutations and CSV destination matrix on supported platforms.
 - Rohan owns all iOS-specific work and physical-device checks, including keyboard, navigation, persistence and CSV (issue #34).
 - Verify large text, screen-reader navigation, responsive web and long/large ledgers.
