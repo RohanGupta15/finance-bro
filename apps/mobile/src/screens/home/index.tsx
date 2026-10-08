@@ -74,7 +74,7 @@ export function Home() {
     try {
       if (!await ledger.softDeleteTransaction(selected.id)) throw new Error('Entry unavailable');
       finish();
-    } catch { setError('The entry could not be deleted. It is still in your binder; retry.'); }
+    } catch { setError('The entry could not be deleted. It is still saved; try again.'); }
     finally { deleteGuard.current = false; setDeleting(false); }
   }
   if (mode !== 'feed' && ledger) {
@@ -183,11 +183,11 @@ export function Home() {
               const entries = rows.filter((row) => row.categoryId === stamp.categoryId && row.status === 'posted' && !row.excludeFromStats && row.direction === 'debit' && row.kind === 'expense');
               return <View key={stamp.categoryId ?? 'uncategorized'} style={styles.section}>
                 <View style={styles.row}><View style={[styles.dot, { backgroundColor: dot(stamp.categoryName) }]} /><ThemedText style={[Type.rowTitle, styles.headingWords]}>{stamp.categoryName ?? 'Uncategorized'}</ThemedText><ThemedText style={Type.amountSmall}>{money(stamp.expensePaise)}</ThemedText></View>
-                <View style={[styles.shelf, { borderColor: colors.border }]}>{entries.map((entry) => <View key={entry.id} style={{ flex: entry.amountPaise, minWidth: 2, height: 8, borderRadius: 2, backgroundColor: colors.fill }} />)}</View>
+                <View style={[styles.shelf, { borderColor: colors.border }]}>{entries.map((entry) => <View key={entry.id} style={{ flex: entry.amountPaise, minWidth: 0, height: 8, borderRadius: 2, backgroundColor: colors.fill }} />)}</View>
               </View>;
             })}
             <ThemedText themeColor="textSecondary" style={Type.note}>Each chip is an expense.</ThemedText>
-          </View> : !loading && !error ? <ThemedText themeColor="textSecondary">No recorded spending in this binder yet.</ThemedText> : null}
+          </View> : !loading && !error ? <ThemedText themeColor="textSecondary">No spending recorded this month.</ThemedText> : null}
         </View>
         <View style={styles.toolbar}>
           <MonthNavigation month={month} onChange={(value) => { setMonth(value); setCategoryId(undefined); }} />

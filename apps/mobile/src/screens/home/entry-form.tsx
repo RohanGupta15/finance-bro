@@ -27,16 +27,6 @@ type Transaction = NonNullable<Awaited<ReturnType<DataLayer['getTransaction']>>>
 type Direction = 'debit' | 'credit';
 type LoadState = 'loading' | 'ready' | 'error';
 
-const indiaOffsetMs = 330 * 60 * 1000;
-
-function dateAtIndiaClock(input: string, source?: Date): Date {
-  const midnight = parseIndiaDate(input);
-  if (!source) return midnight;
-  const indiaTime = new Date(source.getTime() + indiaOffsetMs);
-  const timeIntoDay = (((indiaTime.getUTCHours() * 60 + indiaTime.getUTCMinutes()) * 60 + indiaTime.getUTCSeconds()) * 1000) + indiaTime.getUTCMilliseconds();
-  return new Date(midnight.getTime() + timeIntoDay);
-}
-
 function categoryKindFor(kind: Transaction['kind'], direction: Direction): 'expense' | 'income' | undefined {
   if (kind === 'expense') return 'expense';
   if (kind === 'income') return 'income';
@@ -184,7 +174,7 @@ export function EntryForm({ ledger, onSaved, onCancel, transaction }: EntryFormP
       return;
     }
     try {
-      occurredAt = dateAtIndiaClock(date, transaction?.occurredAt ?? new Date());
+      occurredAt = parseIndiaDate(date, transaction?.occurredAt ?? new Date());
     } catch {
       setDetailsOpen(true);
       setSubmitError('Enter a real date in YYYY-MM-DD format.');
