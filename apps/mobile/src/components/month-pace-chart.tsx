@@ -6,6 +6,7 @@ import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 import { ThemedText } from '@/components/themed-text';
 import { Fonts, Motion, Radius, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { toggleCategoryFilter } from '@/utils/category-filter';
 import { money } from '@/utils/display';
 import type { CategoryBar, MonthPace } from '@/utils/month-pace';
 
@@ -70,7 +71,7 @@ function linePath(values: number[], x: (day: number) => number, y: (paise: numbe
  */
 export function MonthPaceChart({ pace, bars, monthName, previousName, hasFixed, selectedCategoryId, onSelectCategory }: {
   pace: MonthPace; bars: CategoryBar[]; monthName: string; previousName: string; hasFixed: boolean;
-  selectedCategoryId: string | null | undefined; onSelectCategory: (categoryId: string | null) => void;
+  selectedCategoryId: string | null | undefined; onSelectCategory: (categoryId: string | null | undefined) => void;
 }) {
   const colors = useTheme();
   const [width, setWidth] = useState(0);
@@ -153,7 +154,7 @@ export function MonthPaceChart({ pace, bars, monthName, previousName, hasFixed, 
         const selectable = bar.key !== '__other';
         const selected = selectable && selectedCategoryId === bar.categoryId;
         const amount = bar.budgetPaise === null ? `${money(bar.spentPaise)} · no budget` : `${money(bar.spentPaise)} of ${money(bar.budgetPaise)}`;
-        return <Pressable key={bar.key} disabled={!selectable} onPress={() => onSelectCategory(selected ? null : bar.categoryId)}
+        return <Pressable key={bar.key} disabled={!selectable} onPress={() => onSelectCategory(toggleCategoryFilter(selectedCategoryId, bar.categoryId))}
           accessibilityRole={selectable ? 'button' : 'text'} accessibilityState={{ selected }}
           accessibilityLabel={`${bar.label}${bar.fixed ? ', fixed cost' : ''}, ${amount}${bar.over ? ', over budget' : ''}`}
           accessibilityHint={selectable ? 'Shows only these entries below.' : undefined}

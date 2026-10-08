@@ -8,6 +8,8 @@ The user requested minimal text, minimal overwhelm and low effort after a full w
 
 Home, Budgets and Insights use a month sheet with entry months plus the current and viewed month. Previous/next controls inside the sheet keep transaction-free and future budget months reachable.
 
+On Home's chart, tapping a category filters the entry list; Uncategorized is a distinct filter, and tapping the selected category again clears it.
+
 Android uses Router tabs for the reference floating capsule, with symmetric side insets and fully visible labels. Entry and paste hide that capsule. The entry footer avoids the keyboard and bottom system area. iOS retains NativeTabs and requires Rohan's device validation.
 
 ## Observed validation

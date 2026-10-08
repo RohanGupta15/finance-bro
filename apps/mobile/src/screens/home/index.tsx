@@ -214,7 +214,7 @@ export function Home() {
               bars={topCategoryBars({ spending: stamps, budgets, categories })}
               monthName={monthName} previousName={previousMonthName} hasFixed={categories.some((category) => category.isFixed)}
               selectedCategoryId={categoryId}
-              onSelectCategory={(id) => setCategoryId(id ?? undefined)}
+              onSelectCategory={(id) => setCategoryId(id)}
             />
           </View> : <ThemedText themeColor="textSecondary" style={Type.note}>No spending recorded in {monthName}.</ThemedText>}
         </Animated.View> : null}
