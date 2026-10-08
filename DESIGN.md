@@ -1,6 +1,6 @@
 ---
 name: Finance Bro
-description: An expense binder that reads bank texts, keeps the amount and forgets the message.
+description: A local expense tracker with manual entry and optional paste imports.
 colors:
   ink: "#17181D"
   ink-secondary: "#4B4E58"
@@ -263,7 +263,7 @@ Soft-cornered paper with drawn edges. Cards are 18px, hero cards 22px, controls 
 - Rows with a 10px stamp dot or a 44px date tile on the left, a Row Title, a Note beneath, and the amount in Space Mono on the right. 1.5px rules between rows, none after the last.
 
 ### Navigation
-- A floating capsule 64px tall, 16px from the sides, 24px above the bottom, four tabs (Binder, Budgets, Insights, Settings) with 22px stroked icons and 11px labels. The selected tab sits on a round tint (`rgba(23,24,29,0.09)` light, `rgba(10,10,14,0.42)` dark) with an 800-weight label. In the app this is `NativeTabs`: real Liquid Glass on iOS 26+, a matching bottom bar on Android.
+- A floating capsule 64px tall, 16px from the sides, 24px above the bottom, four tabs (Home, Budgets, Insights, Settings) with 22px stroked icons and 11px labels. The selected tab sits on a round tint (`rgba(23,24,29,0.09)` light, `rgba(10,10,14,0.42)` dark) with an 800-weight label. The app retains NativeTabs on iOS and web; Android uses Router tabs to match the floating capsule because the native Material bar cannot float. Hide the Android capsule during entry/paste. iOS requires Rohan’s device verification.
 
 ### Pulled Cards (signature)
 - 148×194 cards fanned in a stack on Home, rotated, each with a stamp dot, merchant, time and amount. The newest is larger (166×216), lifted, and carries a rotated "New" stamp. They deal in with a 640ms expo-out arc.
@@ -285,3 +285,7 @@ Soft-cornered paper with drawn edges. Cards are 18px, hero cards 22px, controls 
 - **Don't** use gradients, glows, or glass anywhere except the tab bar.
 - **Don't** put a label or eyebrow above a heading, or number sections.
 - **Don't** nest cards, or wrap every section in a card; most sections are open rows on paper.
+
+## Low-energy default views
+
+Preserve the approved Ink and Stamps visual system while shortening copy and hiding secondary controls. Home says Expense tracker; the primary path is Add → amount → Save. Date defaults to today, with category/account/note behind Add details. Filters and paste sit under More; the entry list and deeper insights start collapsed. Keep keyboard-visible Save, discard protection, accessible controls, exact money and recoverable errors.
