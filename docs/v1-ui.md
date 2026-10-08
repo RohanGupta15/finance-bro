@@ -23,7 +23,9 @@ On 2026-10-08, a Motorola Edge 60 Pro running Android 17 rendered the connected 
 
 The temporary source hook was restored, the isolated database and device test captures were deleted, and the phone's original dark-mode setting was restored. Normal financial data was not inspected. Local screenshots are development evidence and are not published to GitHub.
 
-Earlier connected browser evidence included invalid amount rejection, save/edit, a category budget and paid bill, and CSV download. Those checks preceded the latest copy/disclosure refinements; they are not a complete check of the latest browser build.
+The current exported browser build was exercised on 2026-10-08 with fictional data: amount-only form, rejection of ₹12.345 with input retained, successful ₹12.34 save, immediate spending update from ₹550.25 to ₹562.59, and persistence after reload. Earlier browser checks covered edit, a category budget and paid bill, and CSV download; those broader flows preceded the latest disclosure refinements.
+
+Frozen install, pnpm check (28 mobile/data and 31 parser tests), Expo dependency check, Expo Doctor (20/20), Android/iOS/web bundle exports and git diff --check passed for this checkpoint. CI and native APK checks remain revision-specific.
 
 ## Remaining release gates
 
