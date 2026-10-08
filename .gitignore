@@ -10,6 +10,8 @@ npm-debug.*
 # Expo and local-only artifacts
 .expo/
 apps/*/.expo/
+apps/mobile/android/
+apps/mobile/ios/
 .impeccable/mocks/
 .impeccable/review/
 .impeccable/build/

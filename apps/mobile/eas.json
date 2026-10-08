@@ -5,16 +5,19 @@
   },
   "build": {
     "development": {
+      "pnpm": "12.9.1",
       "developmentClient": true,
       "distribution": "internal",
       "env": { "APP_VARIANT": "development" },
       "android": { "buildType": "apk" }
     },
     "preview": {
+      "pnpm": "12.9.1",
       "distribution": "internal",
       "android": { "buildType": "apk" }
     },
     "production": {
+      "pnpm": "12.9.1",
       "autoIncrement": true
     }
   },

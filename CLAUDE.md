@@ -2,7 +2,7 @@
 
 Guidance for Claude Code (and humans) working in this repo. Product context is in [README.md](README.md); workflow is in [CONTRIBUTING.md](CONTRIBUTING.md). This file records **decisions and conventions** — keep it current when a decision changes.
 
-> **Status:** scaffolded. Monorepo, Expo SDK 58 app shell (4 tabs) and the parser core with the generic rule are in place. Not built yet: institution rules (waiting on real samples), DB, native SMS/App Intent modules, ledger UI.
+> **Status:** Expo app shell and generic SMS parser, plus the local manual-first data layer: validated entry, account/category management, transaction queries/corrections, India-month totals, budgets, bills, CSV content and keyed paste review/save. See [the v1 data contract](docs/v1-data-layer.md) for scope, rules and verification gates. Connected manual-first screens and Android/web CSV destinations are in implementation and verification. Follow the exact Ink and Stamps references in DESIGN.md and docs/design/screens; the scrapped Quicksave name is not current branding. Native SMS/App Intent modules remain separate feasibility work. Rohan owns all iOS-specific implementation and real-device verification.
 
 ## What we're building
 
@@ -13,11 +13,11 @@ A mobile-first personal expense tracker for India. USP: it reads bank / UPI / ca
 - **Expo SDK 58 (beta)**, React Native 0.88 RC, TypeScript (strict), New Architecture only.
 - **Development build** via `expo-dev-client` — never Expo Go (we ship custom native code).
 - **Expo Router** (tabs: Home, Insights, Budgets, Settings; add/edit as modal sheets).
-- Planned **expo-sqlite + Drizzle ORM** (migrations, `useLiveQuery`). The DB is the source of truth.
+- **expo-sqlite + Drizzle ORM** for the local ledger, with generated migrations. The DB is the source of truth; `useLiveQuery` integration remains planned.
 - Planned **Zustand** for small UI-only state. No React Query (there is no server).
 - **@expo/ui** native components where mature, Reanimated + haptics for motion.
 - **pnpm workspaces + Turborepo**, `node-linker=hoisted` (try isolated installs later). Turbo's auto-written `AGENTS.md` is disabled (`agentGuidance: false`); before changing Turbo config, read the docs bundled in `node_modules/turbo/docs/`, since Turbo changes between versions.
-- **Vitest** for packages; Jest + React Native Testing Library are planned for app tests. **EAS Build** for binaries.
+- **Vitest** for packages and **node:test + node:sqlite** for ledger persistence/migration checks. Jest + React Native Testing Library are planned for screen tests. **EAS Build** for binaries.
 
 ### Expo skills — use them, don't rely on memory
 
@@ -184,9 +184,10 @@ Behaviour was originally inspired by [Sushi](https://github.com/jerameel/sushi) 
 
 ## Scope
 
-The confirmed initial finance workflows include expenses/income, budgets and bills; see PRODUCT.md. Receipt scanning and connected email are confirmed later entry requirements; providers and their fit with the local-only design remain open. The existing code is a parser and shell, not this full roadmap.
+The confirmed initial finance workflows include expenses/income, budgets and bills; see PRODUCT.md. Receipt scanning and connected email are confirmed later entry requirements; providers and their fit with the local-only design remain open. The shared local business layer exists; connected screens are under verification. PRODUCT.md and roadmap issue #7 define the approved manual-first v1. The older automatic-import roadmap below is future work, not a v1 release gate.
 
-- **v1 (MVP):** monorepo + parser (~10 major banks, GPay/PhonePe/Paytm, the maintainer's cards/wallets) with fixtures; Android live capture + catch-up + 90-day backfill; dedupe/transfer/refund/failed handling; manual add/edit/delete/re-categorise; merchant auto-categorisation that learns; Home feed, month summary, category breakdown; Review inbox; app lock; iOS App Intent (JSC parser) + Shortcuts onboarding + paste; CSV export; Play `play`/`sideload` flavours.
+- **v1 (manual-first MVP):** validated manual expenses/income; local accounts/categories; month feed, recorded cash-flow totals and category breakdown; protected edits and soft deletion; transient paste-to-review import with keyed deduplication and explicit key-loss recovery; monthly category budgets; due/paid bill records; user-initiated CSV export. Shared Expo SQLite contract on Android/iOS/web. No automatic inbox import, forecast or bank balance claim. Rohan owns iOS implementation and device checks.
+- **Later import feasibility:** Android SMS live capture/catch-up/backfill (issue #16), iOS App Intents/Shortcuts (issue #17), additional bank parser fixtures, receipt scanning and connected email. Merchant learning, app lock and distribution flavors remain separate decisions/work.
 - **v1.1:** encrypted backup/restore, home-screen widget, iOS share extension.
 - **v2:** advanced recurring detection, insights, search/filters, tags, split entries, custom category tree.
 - **Out of scope:** user accounts, backend sync, Account Aggregator / bank linking, AI/ML, investments, bill-splitting with friends, multi-currency, ads.
