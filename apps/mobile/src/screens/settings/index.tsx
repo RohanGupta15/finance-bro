@@ -13,6 +13,7 @@ import { getLedger, type DataLayer, type NewAccount, type NewCategory } from '@/
 import { useTheme } from '@/hooks/use-theme';
 import { indiaDate } from '@/utils/display';
 import { saveCsv } from '@/exports/save-csv';
+import { ExportCleanupError } from '@/exports/save-csv-write';
 
 type Account = Awaited<ReturnType<DataLayer['listAccounts']>>[number];
 type Category = Awaited<ReturnType<DataLayer['listCategories']>>[number];
@@ -50,7 +51,7 @@ export default function SettingsScreen() {
   const [categoryEditor, setCategoryEditor] = useState<string | 'new' | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
-  const [exportError, setExportError] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const operationGuard = useRef(false);
 
   const refresh = useCallback(async (isCurrent: () => boolean = () => true) => {
@@ -84,6 +85,7 @@ export default function SettingsScreen() {
     if (operationGuard.current) return 'Another settings action is finishing. Try again in a moment.';
     operationGuard.current = true;
     setPending('account');
+    setNotice(null);
     try {
       const ledger = await getLedger();
       if (id) {
@@ -131,6 +133,7 @@ export default function SettingsScreen() {
     if (operationGuard.current) return 'Another settings action is finishing. Try again in a moment.';
     operationGuard.current = true;
     setPending('category');
+    setNotice(null);
     try {
       const ledger = await getLedger();
       if (id) {
@@ -191,15 +194,18 @@ export default function SettingsScreen() {
     if (operationGuard.current) return;
     operationGuard.current = true;
     setPending('export');
-    setExportError(false);
+    setExportError(null);
     setNotice(null);
     try {
       const ledger = await getLedger();
       const content = await ledger.exportTransactionsCsv();
       const result = await saveCsv(content, `transactions-${indiaDate()}.csv`);
-      setNotice({ text: result === 'cancelled' ? 'Export cancelled. No file was created.' : 'CSV export is ready.' });
-    } catch {
-      setExportError(true);
+      setNotice({ text: result === 'cancelled' ? 'Export cancelled. No file was created.'
+        : Platform.OS === 'web' ? 'Download requested. Check your downloads.' : 'CSV saved to your chosen folder.' });
+    } catch (error) {
+      setExportError(error instanceof ExportCleanupError
+        ? 'Export couldn’t finish. Check your chosen folder for an incomplete CSV before retrying. Your ledger is unchanged.'
+        : 'Export couldn’t finish. Your ledger is unchanged; try again.');
     } finally {
       setPending(null);
       operationGuard.current = false;
@@ -397,7 +403,7 @@ export default function SettingsScreen() {
                 </View>
                 {pending === 'export' ? <ActivityIndicator color={theme.textSecondary} /> : null}
               </Pressable>
-              {exportError ? <ThemedText accessibilityRole="alert" style={[Type.note, styles.exportError, { color: theme.over }]}>Export couldn’t finish. Your ledger is unchanged; try again.</ThemedText> : null}
+              {exportError ? <ThemedText accessibilityRole="alert" style={[Type.note, styles.exportError, { color: theme.over }]}>{exportError}</ThemedText> : null}
             </SettingsGroup>
             <ThemedText style={[Type.note, styles.exportNote]}>Local file · not encrypted.</ThemedText>
           </View>
