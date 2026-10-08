@@ -1,0 +1,575 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-07T14:41:40.974Z",
+  "title": "Design System: Finance Bro",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "primary",
+        "displayName": "Ink",
+        "canonical": "#17181D",
+        "tonalRamp": [
+          "#070709",
+          "#0C0C0F",
+          "#101114",
+          "#15161A",
+          "#45464A",
+          "#7F8083",
+          "#B9BABB",
+          "#E8E8E8"
+        ]
+      },
+      "ink-secondary": {
+        "role": "neutral",
+        "displayName": "Ink Secondary",
+        "canonical": "#4B4E58",
+        "tonalRamp": [
+          "#17171A",
+          "#26272C",
+          "#35373E",
+          "#44464F",
+          "#6F7179",
+          "#9C9EA3",
+          "#C9CACD",
+          "#EDEDEE"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Ink Muted",
+        "canonical": "#8B8E98",
+        "tonalRamp": [
+          "#2A2B2E",
+          "#46474C",
+          "#61636A",
+          "#7D8089",
+          "#A2A5AD",
+          "#BFC1C6",
+          "#DCDDE0",
+          "#F3F4F5"
+        ]
+      },
+      "cool-paper": {
+        "role": "neutral",
+        "displayName": "Cool Paper",
+        "canonical": "#F1F2F5",
+        "tonalRamp": [
+          "#48494A",
+          "#79797B",
+          "#A9A9AC",
+          "#D9DADD",
+          "#F4F5F7",
+          "#F7F8FA",
+          "#FBFBFC",
+          "#FEFEFE"
+        ]
+      },
+      "card-white": {
+        "role": "neutral",
+        "displayName": "Card White",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#4D4D4D",
+          "#808080",
+          "#B3B3B3",
+          "#E6E6E6",
+          "#FFFFFF",
+          "#FFFFFF",
+          "#FFFFFF",
+          "#FFFFFF"
+        ]
+      },
+      "rule-grey": {
+        "role": "neutral",
+        "displayName": "Rule Grey",
+        "canonical": "#D9DBE1",
+        "tonalRamp": [
+          "#414244",
+          "#6D6E71",
+          "#98999E",
+          "#C3C5CB",
+          "#E1E2E7",
+          "#EAEBEF",
+          "#F4F4F6",
+          "#FBFBFC"
+        ]
+      },
+      "track-grey": {
+        "role": "neutral",
+        "displayName": "Track Grey",
+        "canonical": "#E1E3E8",
+        "tonalRamp": [
+          "#444446",
+          "#717274",
+          "#9E9FA2",
+          "#CBCCD1",
+          "#E7E9ED",
+          "#EFF0F2",
+          "#F6F7F8",
+          "#FCFCFD"
+        ]
+      },
+      "highlighter": {
+        "role": "primary",
+        "displayName": "Highlighter",
+        "canonical": "#FFC83D",
+        "tonalRamp": [
+          "#4D3C12",
+          "#80641F",
+          "#B38C2B",
+          "#E6B437",
+          "#FFD364",
+          "#FFE194",
+          "#FFEFC5",
+          "#FFFAEC"
+        ]
+      },
+      "over-red": {
+        "role": "secondary",
+        "displayName": "Over Red",
+        "canonical": "#C8372A",
+        "tonalRamp": [
+          "#3C110D",
+          "#641C15",
+          "#8C271D",
+          "#B43226",
+          "#D35F55",
+          "#E1918A",
+          "#EFC3BF",
+          "#FAEBEA"
+        ]
+      },
+      "night-paper": {
+        "role": "neutral",
+        "displayName": "Night Paper",
+        "canonical": "#16171C",
+        "tonalRamp": [
+          "#070708",
+          "#0B0C0E",
+          "#0F1014",
+          "#141519",
+          "#454549",
+          "#7F7F82",
+          "#B9B9BB",
+          "#E8E8E8"
+        ]
+      },
+      "night-card": {
+        "role": "neutral",
+        "displayName": "Night Card",
+        "canonical": "#22242C",
+        "tonalRamp": [
+          "#0A0B0D",
+          "#111216",
+          "#18191F",
+          "#1F2028",
+          "#4E5056",
+          "#85878B",
+          "#BDBDC0",
+          "#E9E9EA"
+        ]
+      },
+      "night-ink": {
+        "role": "neutral",
+        "displayName": "Night Ink",
+        "canonical": "#ECEAF2",
+        "tonalRamp": [
+          "#474649",
+          "#767579",
+          "#A5A4A9",
+          "#D4D3DA",
+          "#F0EEF5",
+          "#F5F3F8",
+          "#F9F9FB",
+          "#FDFDFE"
+        ]
+      },
+      "night-ink-secondary": {
+        "role": "neutral",
+        "displayName": "Night Ink Secondary",
+        "canonical": "#A3A2B0",
+        "tonalRamp": [
+          "#313135",
+          "#525158",
+          "#72717B",
+          "#93929E",
+          "#B5B5C0",
+          "#CCCCD4",
+          "#E3E3E7",
+          "#F6F6F7"
+        ]
+      },
+      "night-border": {
+        "role": "neutral",
+        "displayName": "Night Border",
+        "canonical": "#3A3C48",
+        "tonalRamp": [
+          "#111216",
+          "#1D1E24",
+          "#292A32",
+          "#343641",
+          "#61636D",
+          "#93949A",
+          "#C4C5C8",
+          "#EBECED"
+        ]
+      },
+      "night-rule": {
+        "role": "neutral",
+        "displayName": "Night Rule",
+        "canonical": "#2C2E37",
+        "tonalRamp": [
+          "#0D0E11",
+          "#16171C",
+          "#1F2027",
+          "#282932",
+          "#56585F",
+          "#8B8C91",
+          "#C0C0C3",
+          "#EAEAEB"
+        ]
+      },
+      "night-track": {
+        "role": "neutral",
+        "displayName": "Night Track",
+        "canonical": "#2A2C35",
+        "tonalRamp": [
+          "#0D0D10",
+          "#15161B",
+          "#1D1F25",
+          "#262830",
+          "#55565D",
+          "#8A8B90",
+          "#BFC0C2",
+          "#EAEAEB"
+        ]
+      },
+      "night-over": {
+        "role": "secondary",
+        "displayName": "Night Over",
+        "canonical": "#FF7A66",
+        "tonalRamp": [
+          "#4D251F",
+          "#803D33",
+          "#B35547",
+          "#E66E5C",
+          "#FF9585",
+          "#FFB6AB",
+          "#FFD7D1",
+          "#FFF2F0"
+        ]
+      },
+      "stamp-food": {
+        "role": "tertiary",
+        "displayName": "Stamp Food",
+        "canonical": "#D9694B",
+        "tonalRamp": [
+          "#412017",
+          "#6D3526",
+          "#984A35",
+          "#C35F44",
+          "#E1876F",
+          "#EAAD9C",
+          "#F4D2C9",
+          "#FBF0ED"
+        ]
+      },
+      "stamp-rent": {
+        "role": "tertiary",
+        "displayName": "Stamp Rent",
+        "canonical": "#4F74B0",
+        "tonalRamp": [
+          "#182335",
+          "#283A58",
+          "#37517B",
+          "#47689E",
+          "#7290C0",
+          "#9EB3D4",
+          "#CAD5E7",
+          "#EDF1F7"
+        ]
+      },
+      "stamp-groceries": {
+        "role": "tertiary",
+        "displayName": "Stamp Groceries",
+        "canonical": "#6F9A45",
+        "tonalRamp": [
+          "#212E15",
+          "#384D23",
+          "#4E6C30",
+          "#648B3E",
+          "#8CAE6A",
+          "#B0C799",
+          "#D4E1C7",
+          "#F1F5EC"
+        ]
+      },
+      "stamp-shopping": {
+        "role": "tertiary",
+        "displayName": "Stamp Shopping",
+        "canonical": "#B8628A",
+        "tonalRamp": [
+          "#371D29",
+          "#5C3145",
+          "#814561",
+          "#A6587C",
+          "#C681A1",
+          "#D8A9BF",
+          "#EAD0DC",
+          "#F8EFF3"
+        ]
+      },
+      "stamp-travel": {
+        "role": "tertiary",
+        "displayName": "Stamp Travel",
+        "canonical": "#3E9E91",
+        "tonalRamp": [
+          "#132F2C",
+          "#1F4F49",
+          "#2B6F66",
+          "#388E83",
+          "#65B1A7",
+          "#95CAC3",
+          "#C5E2DE",
+          "#ECF5F4"
+        ]
+      },
+      "stamp-bills": {
+        "role": "tertiary",
+        "displayName": "Stamp Bills",
+        "canonical": "#B8962E",
+        "tonalRamp": [
+          "#372D0E",
+          "#5C4B17",
+          "#816920",
+          "#A68729",
+          "#C6AB58",
+          "#D8C58C",
+          "#EAE0C0",
+          "#F8F5EA"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "amount-hero": {
+        "displayName": "Amount Hero",
+        "purpose": "The one figure a hero card exists for."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Screen titles."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headings."
+      },
+      "row-title": {
+        "displayName": "Row Title",
+        "purpose": "Merchant, category and setting names."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Hero sentences and insight bodies."
+      },
+      "note": {
+        "displayName": "Note",
+        "purpose": "Explanatory line under a chart or row."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Asides, stat labels, axis labels."
+      },
+      "amount": {
+        "displayName": "Amount",
+        "purpose": "Every rupee value in rows and stats."
+      }
+    },
+    "shadows": [
+      {
+        "name": "press",
+        "value": "2px 3px 0 #17181D",
+        "purpose": "Small buttons, the suggestion pill. Light mode only."
+      },
+      {
+        "name": "card",
+        "value": "3px 4px 0 #17181D",
+        "purpose": "Cards, grouped lists, the Add button. Light mode only."
+      },
+      {
+        "name": "lifted",
+        "value": "4px 5px 0 #17181D",
+        "purpose": "Top pulled card, newest entry. Light mode only."
+      },
+      {
+        "name": "glass-light",
+        "value": "inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(255,255,255,0.4)",
+        "purpose": "Tab bar highlight, with backdrop-filter blur(20px) saturate(180%) over rgba(255,255,255,0.55)."
+      },
+      {
+        "name": "glass-dark",
+        "value": "inset 0 1px 0 rgba(255,255,255,0.22)",
+        "purpose": "Dark tab bar highlight over rgba(236,234,242,0.16)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Every entrance, slide and state change."
+      },
+      {
+        "name": "quick",
+        "value": "200ms",
+        "purpose": "Colour and fade changes; the reduced-motion replacement."
+      },
+      {
+        "name": "standard",
+        "value": "320ms",
+        "purpose": "Toggle thumbs, bar width changes."
+      },
+      {
+        "name": "entrance",
+        "value": "480ms",
+        "purpose": "Hero card rise, bar growth."
+      },
+      {
+        "name": "deal",
+        "value": "640ms",
+        "purpose": "Pulled cards dealing in on Home."
+      },
+      {
+        "name": "stagger",
+        "value": "60ms",
+        "purpose": "Delay between list items."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "390px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Add Button",
+      "kind": "button",
+      "refersTo": "button-add",
+      "description": "The one highlighter action on Home.",
+      "html": "<button class=\"ds-add\" aria-label=\"Add entry\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.8\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg></button>",
+      "css": ".ds-add{width:52px;height:52px;border-radius:18px;background:#FFC83D;color:#17181D;border:2px solid #17181D;box-shadow:3px 4px 0 #17181D;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 120ms cubic-bezier(0.16,1,0.3,1),box-shadow 120ms}.ds-add:hover{transform:translate(-1px,-1px);box-shadow:4px 5px 0 #17181D}.ds-add:active{transform:translate(2px,2px) scale(0.96);box-shadow:1px 2px 0 #17181D}.ds-add:focus-visible{outline:3px solid #17181D;outline-offset:3px}"
+    },
+    {
+      "name": "Pill Button",
+      "kind": "button",
+      "refersTo": "button-pill",
+      "description": "Month picker and secondary actions.",
+      "html": "<button class=\"ds-pill\">October<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 9l6 6 6-6\"/></svg></button>",
+      "css": ".ds-pill{font-family:'Bricolage Grotesque',sans-serif;height:44px;padding:0 14px;border:2px solid #17181D;border-radius:999px;background:#FFFFFF;color:#17181D;font-size:14px;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:background 200ms}.ds-pill:hover{background:#E1E3E8}.ds-pill:focus-visible{outline:3px solid #FFC83D;outline-offset:2px}"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "nav",
+      "refersTo": "segmented-selected",
+      "description": "Cards/Chart and Light/Dark/System.",
+      "html": "<div class=\"ds-seg\" role=\"radiogroup\"><button class=\"ds-seg-on\" role=\"radio\" aria-checked=\"true\">Cards</button><button role=\"radio\" aria-checked=\"false\">Chart</button></div>",
+      "css": ".ds-seg{font-family:'Bricolage Grotesque',sans-serif;display:inline-grid;grid-template-columns:1fr 1fr;width:156px;height:44px;padding:3px;box-sizing:border-box;border:2px solid #17181D;border-radius:999px;background:#FFFFFF}.ds-seg button{border:none;background:transparent;border-radius:999px;font:inherit;font-size:14px;font-weight:700;color:#17181D;cursor:pointer;transition:background 320ms cubic-bezier(0.16,1,0.3,1),color 200ms}.ds-seg button.ds-seg-on{background:#17181D;color:#F1F2F5}.ds-seg button:focus-visible{outline:3px solid #FFC83D}"
+    },
+    {
+      "name": "Switch",
+      "kind": "input",
+      "refersTo": "switch",
+      "description": "On/off settings.",
+      "html": "<button class=\"ds-switch\" role=\"switch\" aria-checked=\"true\"><span></span></button>",
+      "css": ".ds-switch{position:relative;width:52px;height:32px;border-radius:999px;border:2px solid #17181D;background:#17181D;padding:0;cursor:pointer;transition:background 200ms}.ds-switch span{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:#FFC83D;transform:translateX(20px);transition:transform 260ms cubic-bezier(0.16,1,0.3,1)}.ds-switch[aria-checked=false]{background:#E1E3E8}.ds-switch[aria-checked=false] span{background:#FFFFFF;transform:none}.ds-switch:focus-visible{outline:3px solid #FFC83D;outline-offset:2px}"
+    },
+    {
+      "name": "Hero Card",
+      "kind": "card",
+      "refersTo": "hero-card",
+      "description": "One per screen: the headline figure and a sentence.",
+      "html": "<section class=\"ds-hero\"><span class=\"ds-hero-sub\">Safe to spend today</span><span class=\"ds-hero-amt\">₹490</span><span class=\"ds-hero-sub\">₹11,760 left of ₹30,000, over 24 days.</span></section>",
+      "css": ".ds-hero{font-family:'Bricolage Grotesque',sans-serif;background:#17181D;color:#F1F2F5;border-radius:22px;padding:22px;display:flex;flex-direction:column;gap:6px;max-width:350px}.ds-hero-sub{font-size:15px;color:#B9BBC4}.ds-hero-amt{font-family:'Space Mono',monospace;font-weight:700;font-size:46px;letter-spacing:-0.04em;line-height:1}"
+    },
+    {
+      "name": "Budget Row",
+      "kind": "custom",
+      "refersTo": "progress-bar",
+      "description": "Ink bar with a highlighter pace tick; red only when over.",
+      "html": "<div class=\"ds-brow\"><div class=\"ds-brow-top\"><span class=\"ds-dot\"></span><b>Groceries</b><span class=\"ds-amt\">₹3,100</span><span class=\"ds-of\">/ ₹5,000</span></div><div class=\"ds-track\"><span class=\"ds-fill\"></span><span class=\"ds-tick\"></span></div><span class=\"ds-note\">₹1,900 left · about ₹79 a day</span></div>",
+      "css": ".ds-brow{font-family:'Bricolage Grotesque',sans-serif;display:flex;flex-direction:column;gap:9px;max-width:350px;color:#17181D}.ds-brow-top{display:flex;align-items:center;gap:8px}.ds-brow-top b{flex-grow:1;font-size:16px;font-weight:800}.ds-dot{width:10px;height:10px;border-radius:50%;background:#6F9A45}.ds-amt{font-family:'Space Mono',monospace;font-weight:700;font-size:14px}.ds-of{font-family:'Space Mono',monospace;font-size:12px;color:#4B4E58}.ds-track{position:relative;height:10px;border-radius:5px;background:#E1E3E8}.ds-fill{position:absolute;top:0;bottom:0;left:0;width:62%;border-radius:5px;background:#17181D}.ds-tick{position:absolute;left:22.6%;top:-4px;bottom:-4px;width:3px;border-radius:2px;background:#FFC83D}.ds-note{font-size:13px;color:#4B4E58}"
+    },
+    {
+      "name": "Glass Tab Bar",
+      "kind": "nav",
+      "refersTo": "tab-bar",
+      "description": "Floating capsule navigation; the only glass surface.",
+      "html": "<nav class=\"ds-tabs\"><a aria-current=\"page\">Binder</a><a>Budgets</a><a>Insights</a><a>Settings</a></nav>",
+      "css": ".ds-tabs{font-family:'Bricolage Grotesque',sans-serif;display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:5px;height:64px;box-sizing:border-box;max-width:358px;border-radius:999px;background:rgba(255,255,255,0.55);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(23,24,29,0.16);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95)}.ds-tabs a{display:flex;align-items:center;justify-content:center;border-radius:999px;font-size:11px;font-weight:600;color:#3E414B;cursor:pointer;transition:background 200ms}.ds-tabs a:hover{background:rgba(23,24,29,0.05)}.ds-tabs a[aria-current]{background:rgba(23,24,29,0.09);color:#17181D;font-weight:800}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Ink and Stamps",
+    "overview": "Finance Bro looks like a printed binder you carry in your pocket. Every surface is paper, every edge is drawn in ink, and colour arrives only the way a rubber stamp would: small, deliberate, and meaning something. A transaction is a card pulled from a bank text and filed; a month is a binder; a category is a stamp on the corner. The app never glows, never gradients, and never decorates a number to make it feel exciting. Money is set in a typewriter face because it is data, and the words around it are set in a warm grotesque because they are talking to a person.\n\nThe light world (C2) is cool off-white paper with 2px ink outlines and zero-blur offset shadows that read as print registration, not light. The dark world (C3) is the same binder at night: flat charcoal surfaces, outlines softened to a slate border, no offset shadows, and stamp colours lifted and muted so they don't vibrate on a dark ground. Both worlds share one highlighter yellow, and it is rationed.\n\nDensity is a pocket notebook: one column, 20px gutters, generous 28px breaks between sections, rows tall enough to tap. The floating glass tab bar is the only translucent surface, because it is the one piece of system chrome; everything under it is opaque paper.",
+    "keyCharacteristics": [
+      "Ink outlines (2px) and offset ink shadows in light mode; flat tonal layers in dark mode.",
+      "Colour lives in category stamps and one highlighter. Charts, bars and chips are ink.",
+      "Money is always Space Mono bold; prose is Bricolage Grotesque.",
+      "Facts in plain sentences (\"₹420 over. Swiggy is 6 of the 23 entries.\") instead of chart walls.",
+      "One authored motion per screen: cards deal in, bars grow, stamps land."
+    ],
+    "rules": [
+      {
+        "name": "The One Highlighter Rule",
+        "body": "Yellow appears on at most two elements per screen, and one of them is usually the pace tick. If a third thing wants yellow, it is not the most important thing.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink Chart Rule",
+        "body": "Charts are drawn in ink. A chart that needs a legend of colours is the wrong chart; label the row instead.",
+        "section": "colors"
+      },
+      {
+        "name": "The Red Means Over Rule",
+        "body": "Spending is not an error. Amounts are ink. Red appears only when a budget is exceeded or an action destroys data.",
+        "section": "colors"
+      },
+      {
+        "name": "The Money Is Mono Rule",
+        "body": "Every rupee amount, count and date numeral is Space Mono. Prose never is.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Eyebrow Rule",
+        "body": "Headings carry themselves. No small caps label above a title, no section numbers.",
+        "section": "typography"
+      },
+      {
+        "name": "The Printed Not Lit Rule",
+        "body": "Shadows never blur in light mode. A soft drop shadow means something is wrong.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Night Is Flat Rule",
+        "body": "Dark mode drops offset ink shadows entirely; depth comes from surface tone.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do set every rupee value in Space Mono 700 and right-align it in lists.",
+      "Do draw charts, bars and chips in ink, and name each row instead of using a colour legend.",
+      "Do spend yellow on one or two things per screen: the Add button, a pace tick, the single best figure.",
+      "Do write insights as one plain sentence with numbers (\"Food already passed September\").",
+      "Do use the expo-out ease (`cubic-bezier(0.16, 1, 0.3, 1)`) and fade instead of move when reduced motion is on.",
+      "Do keep 120px of scroll clearance under the floating tab bar."
+    ],
+    "donts": [
+      "Don't use red or green for ordinary debits and credits; red means over budget or destructive.",
+      "Don't blur a shadow in light mode, or add offset shadows in dark mode.",
+      "Don't fill bars, chart areas or backgrounds with category colours.",
+      "Don't use gradients, glows, or glass anywhere except the tab bar.",
+      "Don't put a label or eyebrow above a heading, or number sections.",
+      "Don't nest cards, or wrap every section in a card; most sections are open rows on paper."
+    ]
+  }
+}

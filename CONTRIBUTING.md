@@ -23,13 +23,21 @@ To run the app on a phone:
 npm install --global eas-cli
 eas login
 cd apps/mobile
-eas init                     # once: links the project to your Expo account
+# Already linked to @starforge-lab/finance-bro; your Expo account needs org access.
 cd ../..
 pnpm build:android:dev       # or build:ios:dev; install the result on your device
 pnpm dev                     # start Metro, then open the dev build
 ```
 
 This project uses a **development build**, not Expo Go. Rebuild the dev client whenever a native module, config plugin or native dependency changes.
+
+EAS profiles pin pnpm to the root `packageManager` version. Keep these pins aligned when changing pnpm. The SDK 58 image's default pnpm 11 launcher failed while switching to pnpm 12 on Linux; an explicit build pin avoids that version-switch path.
+
+### Android APK through GitHub Actions
+
+The `Android development APK` workflow builds an ARM64 debug client (`com.rohangupta.financebro.dev`) on a standard Ubuntu runner, without EAS credentials or its build queue. Native configuration/dependency changes in PRs to `dev` trigger it. Once the workflow is on `dev`, run it manually with `gh workflow run android-development.yml --ref <branch>`.
+
+Download the `finance-bro-dev-arm64` artifact from the successful run within one day, install its APK on an ARM64 Android phone, and start Metro with `pnpm dev`. This development client needs Metro; it is not a store release. Standard runner compute is free for this public repository; artifacts still count toward the organization's storage allowance. The workflow retains one APK for one day and uses no paid runner. Generated `android/` and `ios/` directories remain uncommitted.
 
 ## Workflow
 
