@@ -6,6 +6,8 @@ Check the repository's **Security** tab for a **Report a vulnerability** option 
 
 ## Known development-tooling advisories
 
+The local-ledger dependency audit on 2026-10-06 additionally reported a moderate `esbuild@0.18.20` advisory through `drizzle-kit@0.31.11` → `@esbuild-kit/esm-loader` → `@esbuild-kit/core-utils`: [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99), concerning cross-origin access to esbuild's development server. Drizzle Kit is used for local migration generation, not shipped as app runtime code. No transitive override was applied; review a compatible upstream tooling update separately. The full audit now reports two high and two moderate advisories, including the three below.
+
 A `pnpm audit` on 2026-10-06 reported three transitive advisories (two high, one moderate). These findings were in development/build tooling:
 
 - `braces@3.0.3` — [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm). No patched version was listed at the time of the audit.
