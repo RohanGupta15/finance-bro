@@ -193,7 +193,7 @@ export function Home() {
               bars={topCategoryBars({ spending: stamps, budgets, categories })}
               monthName={monthName} previousName={previousMonthName} hasFixed={categories.some((category) => category.isFixed)}
               selectedCategoryId={categoryId}
-              onSelectCategory={(id) => { setCategoryId(id ?? undefined); if (id) showEntries(); }}
+              onSelectCategory={(id) => { setCategoryId(id); if (id !== undefined) showEntries(); }}
             />
           </View> : !loading && !error ? <ThemedText themeColor="textSecondary">No spending recorded this month.</ThemedText> : null}
         </View>
