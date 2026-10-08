@@ -269,7 +269,7 @@ export function EntryForm({ ledger, onSaved, onCancel, transaction }: EntryFormP
 
           <View style={styles.section}>
             <ThemedText style={styles.label}>{transaction && !standardKind ? 'Direction' : 'Type'}</ThemedText>
-            <View style={styles.choices} accessibilityRole="radiogroup" accessibilityLabel={transaction && !standardKind ? 'Transaction direction' : 'Transaction type'}>
+            <View style={styles.choices} accessibilityRole="group" accessibilityLabel={transaction && !standardKind ? 'Transaction direction' : 'Transaction type'}>
               <LedgerButton
                 label={transaction && !standardKind ? 'Debit' : 'Expense'}
                 selected={direction === 'debit'}
@@ -288,6 +288,7 @@ export function EntryForm({ ledger, onSaved, onCancel, transaction }: EntryFormP
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ expanded: detailsOpen }}
+            aria-expanded={detailsOpen}
             onPress={() => {
               if (detailsOpen) Keyboard.dismiss();
               setDetailsOpen(!detailsOpen);
@@ -382,7 +383,7 @@ export function EntryForm({ ledger, onSaved, onCancel, transaction }: EntryFormP
               <ThemedText themeColor="textSecondary" style={Type.note}>Your unsaved entry will be lost.</ThemedText>
               <View style={styles.choices}>
                 <LedgerButton label="Keep editing" onPress={() => setDiscardPromptOpen(false)} />
-                <LedgerButton label="Discard" selected onPress={onCancel} />
+                <LedgerButton label="Discard" primary onPress={onCancel} />
               </View>
             </View>
           )}

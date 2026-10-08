@@ -156,7 +156,7 @@ export function Home() {
         </View> : !loading && !error ? <View style={[styles.empty, { borderColor: colors.textMuted }]}>
           <ThemedText style={Type.sectionTitle}>No entries today.</ThemedText>
           <ThemedText themeColor="textSecondary" style={Type.body}>Tap + to add an expense.</ThemedText>
-          <LedgerButton label="Paste a message" disabled={!ledger} onPress={() => setMode('paste')} />
+          {!filters ? <LedgerButton label="Paste a message" disabled={!ledger} onPress={() => setMode('paste')} /> : null}
         </View> : null}
         {error ? <View style={styles.section}><ThemedText accessibilityRole="alert">{error}</ThemedText><LedgerButton label="Retry" onPress={() => setRevision((value) => value + 1)} /></View> : null}
         <View style={styles.section}>
@@ -165,13 +165,13 @@ export function Home() {
               {summary && !loading ? <ThemedText themeColor="textSecondary" style={Type.amountSmall}>{money(summary.expensePaise)} · {rows.length} {rows.length === 1 ? 'entry' : 'entries'}</ThemedText> : null}
             </View>
             <View style={[styles.segment, { borderColor: colors.border }]}>
-              {(['Cards', 'Chart'] as const).map((name) => <Pressable key={name} accessibilityRole="button" accessibilityState={{ selected: view === name }}
+              {(['Cards', 'Chart'] as const).map((name) => <Pressable key={name} accessibilityRole="button" aria-pressed={view === name} accessibilityState={{ selected: view === name }}
                 onPress={() => setView(name)} style={[styles.segmentItem, { backgroundColor: view === name ? colors.fill : 'transparent' }]}>
                 <ThemedText style={[Type.rowTitle, { color: view === name ? colors.background : colors.text }]}>{name}</ThemedText></Pressable>)}
             </View>
           </View>
           {!loading && !error && stamps.length ? view === 'Cards' ? <View style={styles.tiles}>
-            {stamps.map((stamp) => <Pressable key={stamp.categoryId ?? 'uncategorized'} accessibilityRole="button" accessibilityState={{ selected: categoryId === stamp.categoryId }}
+            {stamps.map((stamp) => <Pressable key={stamp.categoryId ?? 'uncategorized'} accessibilityRole="button" aria-pressed={categoryId === stamp.categoryId} accessibilityState={{ selected: categoryId === stamp.categoryId }}
               accessibilityLabel={`Filter ${stamp.categoryName ?? 'Uncategorized'}, spending ${money(stamp.expensePaise)}`}
               onPress={() => { setCategoryId(categoryId === stamp.categoryId ? undefined : stamp.categoryId); showEntries(); }}
               style={[styles.tile, { backgroundColor: colors.backgroundElement, borderColor: categoryId === stamp.categoryId ? colors.fill : colors.border }]}>
@@ -192,7 +192,7 @@ export function Home() {
         </View>
         <View style={styles.toolbar}>
           <MonthNavigation month={month} onChange={(value) => { setMonth(value); setCategoryId(undefined); }} />
-          <LedgerButton label="More" selected={filters} onPress={() => setFilters(!filters)} />
+          <LedgerButton label="More" expanded={filters} onPress={() => setFilters(!filters)} />
         </View>
         {filters ? <View style={styles.section}>
           <LedgerButton label="Paste a message" disabled={!ledger || loading} onPress={() => setMode('paste')} />
@@ -202,7 +202,7 @@ export function Home() {
           <View style={styles.toolbar}><LedgerButton label="All accounts" selected={!accountId} onPress={() => setAccountId(undefined)} />{accounts.map((account) => <LedgerButton key={account.id} label={account.name} selected={accountId === account.id} onPress={() => setAccountId(account.id)} />)}</View>
         </View> : null}
         {!loading && !error ? <View style={styles.section} onLayout={(event) => { entriesY.current = event.nativeEvent.layout.y; }}>
-          <LedgerButton label={entriesOpen ? 'Hide entries' : `View entries (${rows.length})`} onPress={() => entriesOpen ? setEntriesOpen(false) : showEntries()} />
+          <LedgerButton label={entriesOpen ? 'Hide entries' : `View entries (${rows.length})`} expanded={entriesOpen} onPress={() => entriesOpen ? setEntriesOpen(false) : showEntries()} />
           {entriesOpen ? <>
           {visibleRows.length === 0 ? <ThemedText themeColor="textSecondary">No entries match this month and these filters.</ThemedText> : visibleRows.map((row, index) => <Pressable key={row.id} accessibilityRole="button" accessibilityLabel={`Review ${row.direction} ${money(row.amountPaise)}, ${row.counterparty ?? row.categoryName ?? 'entry'}, ${row.status}`}
             onPress={() => select(row)} style={[styles.entryRow, index > 0 ? { borderTopWidth: 1.5, borderColor: colors.rule } : undefined]}>

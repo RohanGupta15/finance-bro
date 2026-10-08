@@ -251,7 +251,7 @@ function Disclosure({ label, expanded, onPress, colors }: {
   label: string; expanded: boolean; onPress: () => void; colors: ReturnType<typeof useTheme>;
 }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ expanded }} onPress={onPress}
+    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ expanded }} aria-expanded={expanded} onPress={onPress}
       style={({ pressed }) => [styles.disclosure, { borderColor: colors.rule, opacity: pressed ? 0.7 : 1 }]}>
       <ThemedText style={Type.rowTitle}>{label}</ThemedText>
       <View style={[styles.chevron, { borderColor: colors.text }, expanded && styles.chevronOpen]} />

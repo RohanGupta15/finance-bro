@@ -4,11 +4,12 @@ import { ThemedText } from './themed-text';
 import { Fonts, Radius, Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export function LedgerButton({ label, onPress, disabled = false, primary = false, selected = false }: {
-  label: string; onPress: () => void; disabled?: boolean; primary?: boolean; selected?: boolean;
+export function LedgerButton({ label, onPress, disabled = false, primary = false, selected, expanded }: {
+  label: string; onPress: () => void; disabled?: boolean; primary?: boolean; selected?: boolean; expanded?: boolean;
 }) {
   const colors = useTheme();
-  return <Pressable accessibilityRole="button" accessibilityState={{ disabled, selected }} disabled={disabled}
+  return <Pressable accessibilityRole="button" accessibilityState={{ disabled, ...(selected !== undefined && { selected }), ...(expanded !== undefined && { expanded }) }}
+    aria-pressed={selected} aria-expanded={expanded} disabled={disabled}
     onPress={onPress} style={({ pressed }) => [styles.button, {
       borderColor: colors.border, backgroundColor: primary ? colors.accent : selected ? colors.fill : colors.backgroundElement,
       opacity: disabled ? 0.5 : pressed ? 0.75 : 1,
@@ -27,7 +28,7 @@ export function MonthNavigation({ month, onChange }: { month: string; onChange: 
     onChange(`${String(Math.floor(total / 12)).padStart(4, '0')}-${String(total % 12 + 1).padStart(2, '0')}`);
   }
   return <View style={styles.monthPicker}>
-    <Pressable accessibilityRole="button" accessibilityLabel={`Choose month, ${label} ${month.slice(0, 4)}`} accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)}
+    <Pressable accessibilityRole="button" accessibilityLabel={`Choose month, ${label} ${month.slice(0, 4)}`} accessibilityState={{ expanded: open }} aria-expanded={open} onPress={() => setOpen(!open)}
       style={[styles.button, styles.monthPill, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
       <ThemedText style={{ ...Type.body, fontFamily: Fonts.sansHeavy }}>{label}</ThemedText>
       <View style={{ width: 7, height: 7, borderRightWidth: 2, borderBottomWidth: 2, borderColor: colors.text, transform: [{ rotate: '45deg' }] }} />

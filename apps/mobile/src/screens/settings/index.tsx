@@ -386,6 +386,7 @@ export default function SettingsScreen() {
                 accessibilityLabel={Platform.OS === 'ios' ? 'Export to CSV, not available on iOS yet' : `Export ${entryCount ?? 0} entries to CSV`}
                 accessibilityHint={Platform.OS === 'ios' ? 'CSV export is not available on iOS yet.' : Platform.OS === 'android' ? 'Choose a folder on this device.' : 'Downloads a copy in your browser.'}
                 accessibilityState={{ disabled: Platform.OS === 'ios' || busy || loading, busy: pending === 'export' }}
+                aria-busy={pending === 'export'}
                 disabled={Platform.OS === 'ios' || busy || loading}
                 onPress={() => void exportCsv()}
                 style={({ pressed }) => [styles.exportRow, { borderBottomColor: theme.rule, opacity: Platform.OS === 'ios' || busy || loading ? 0.55 : pressed ? 0.72 : 1 }]}
@@ -453,6 +454,7 @@ function DisclosureRow({ title, detail, expanded, theme, onPress, last = false }
   return <Pressable
     accessibilityRole="button"
     accessibilityState={{ expanded }}
+    aria-expanded={expanded}
     onPress={onPress}
     style={({ pressed }) => [styles.disclosureRow, !last && { borderBottomColor: theme.rule, borderBottomWidth: StyleSheet.hairlineWidth }, { opacity: pressed ? 0.72 : 1 }]}
   >
@@ -475,6 +477,7 @@ function AccountRow({ account, theme, archived = false, expanded, editing, confi
       accessibilityRole="button"
       accessibilityLabel={`${expanded ? 'Hide' : 'Manage'} ${archived ? 'archived ' : ''}account ${account.name}`}
       accessibilityState={{ expanded: expanded || editing || confirmingArchive }}
+      aria-expanded={expanded || editing || confirmingArchive}
       disabled={disabled || editing || confirmingArchive}
       onPress={onToggle}
       style={({ pressed }) => [styles.dataRow, !last && { borderBottomColor: theme.rule, borderBottomWidth: StyleSheet.hairlineWidth }, { opacity: pressed ? 0.72 : 1 }]}
@@ -509,6 +512,7 @@ function CategoryRow({ category, theme, expanded, editing, confirmingDelete, pen
       accessibilityRole="button"
       accessibilityLabel={`${expanded ? 'Hide' : 'Manage'} ${category.kind} category ${category.name}`}
       accessibilityState={{ expanded: expanded || editing || confirmingDelete }}
+      aria-expanded={expanded || editing || confirmingDelete}
       disabled={disabled || editing || confirmingDelete}
       onPress={onToggle}
       style={({ pressed }) => [styles.dataRow, !last && { borderBottomColor: theme.rule, borderBottomWidth: StyleSheet.hairlineWidth }, { opacity: pressed ? 0.72 : 1 }]}

@@ -403,7 +403,7 @@ export function Budgets() {
                     : `${exactMoney(recordedSpend)} spent this month.`}
               </ThemedText>
               {totalBudget > 0n && <>
-                <View accessibilityRole="progressbar" accessibilityLabel="Spenting compared with combined category limits" accessibilityValue={{ min: 0, max: 100, now: heroFill }} style={[styles.heroTrack, { backgroundColor: colors.heroRule }]}>
+                <View accessibilityRole="progressbar" accessibilityLabel="Spending compared with combined category limits" accessibilityValue={{ min: 0, max: 100, now: heroFill }} aria-valuemin={0} aria-valuemax={100} aria-valuenow={heroFill} style={[styles.heroTrack, { backgroundColor: colors.heroRule }]}>
                   <View style={[styles.heroFill, { width: `${heroFill}%`, backgroundColor: colors.heroText }]} />
                 </View>
 
@@ -467,6 +467,7 @@ export function Budgets() {
                     accessibilityLabel={`Edit ${name} monthly limit. ${money(budget.spentPaise)} recorded spending of ${money(budget.amountPaise)}.`}
                     accessibilityHint="Opens the amount editor."
                     accessibilityState={{ expanded: editingBudget === budget.id }}
+                    aria-expanded={editingBudget === budget.id}
                     disabled={writesDisabled}
                     onPress={() => editingBudget === budget.id ? closeBudgetEditor() : openBudgetEditor(budget.id, budget.amountPaise)}
                     style={({ pressed }) => [styles.categoryButton, { opacity: writesDisabled ? 0.5 : pressed ? 0.72 : 1 }]}>
@@ -480,7 +481,7 @@ export function Budgets() {
                         <ThemedText style={Type.note}>/ {money(budget.amountPaise)}</ThemedText>
                       </View>
                     </View>
-                    <View accessibilityRole="progressbar" accessibilityLabel={`${name} spending`} accessibilityValue={{ min: 0, max: budget.amountPaise, now: Math.min(budget.amountPaise, Math.max(0, budget.spentPaise)) }} style={[styles.categoryTrack, { backgroundColor: colors.track }]}>
+                    <View accessibilityRole="progressbar" accessibilityLabel={`${name} spending`} accessibilityValue={{ min: 0, max: budget.amountPaise, now: Math.min(budget.amountPaise, Math.max(0, budget.spentPaise)) }} aria-valuemin={0} aria-valuemax={budget.amountPaise} aria-valuenow={Math.min(budget.amountPaise, Math.max(0, budget.spentPaise))} style={[styles.categoryTrack, { backgroundColor: colors.track }]}>
                       <View style={[styles.categoryFill, { width: `${fill}%`, backgroundColor: over ? colors.over : colors.fill }]} />
                     </View>
                     <ThemedText style={[Type.note, over && { color: colors.over }]}>
@@ -574,6 +575,7 @@ export function Budgets() {
                     accessibilityRole="button"
                     accessibilityLabel={`${bill.label}, ${status}, due ${bill.dueDate}. ${money(bill.amountPaise)}. Manage bill.`}
                     accessibilityState={{ expanded }}
+                    aria-expanded={expanded}
                     disabled={writesDisabled}
                     onPress={() => expanded ? closeBillEditor() : openBillEditor(bill)}
                     style={({ pressed }) => [styles.billButton, { opacity: writesDisabled ? 0.5 : pressed ? 0.72 : 1 }]}>

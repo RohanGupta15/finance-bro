@@ -437,6 +437,7 @@ export function PasteForm({
               <Pressable
                 accessibilityRole="button"
                 accessibilityState={{ expanded: senderOpen, disabled: busy }}
+                aria-expanded={senderOpen}
                 disabled={busy}
                 onPress={() => setSenderOpen((open) => !open)}
                 style={({ pressed }) => [styles.detailsToggle, { borderColor: colors.border, opacity: busy ? 0.45 : pressed ? 0.7 : 1 }]}>
@@ -512,6 +513,7 @@ export function PasteForm({
                 <Pressable
                   accessibilityRole="button"
                   accessibilityState={{ expanded: detailsVisible, disabled: busy }}
+                  aria-expanded={detailsVisible}
                   disabled={busy}
                   onPress={() => {
                     if (detailsVisible) Keyboard.dismiss();
