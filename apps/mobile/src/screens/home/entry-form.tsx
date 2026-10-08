@@ -184,7 +184,7 @@ export function EntryForm({ ledger, onSaved, onCancel, transaction }: EntryFormP
       return;
     }
     try {
-      occurredAt = dateAtIndiaClock(date, transaction?.occurredAt);
+      occurredAt = dateAtIndiaClock(date, transaction?.occurredAt ?? new Date());
     } catch {
       setDetailsOpen(true);
       setSubmitError('Enter a real date in YYYY-MM-DD format.');

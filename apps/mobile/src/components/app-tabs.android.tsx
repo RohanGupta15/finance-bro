@@ -11,17 +11,19 @@ export default function AppTabs() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const capsuleWidth = Math.min(520, width - 32);
-  return <Tabs screenOptions={{ headerShown: false, animation: 'none',
+  const capsuleInset = (width - capsuleWidth) / 2;
+  return <Tabs screenOptions={({ route }) => ({ headerShown: false, animation: 'none',
     tabBarActiveTintColor: colors.text, tabBarInactiveTintColor: colors.tabText,
     tabBarActiveBackgroundColor: colors.tabSelected,
     tabBarLabelStyle: { fontFamily: Fonts.sansSemiBold, fontSize: 11, marginTop: 2 },
-    tabBarItemStyle: { borderRadius: 999, minHeight: 50, paddingVertical: 4 },
+    tabBarItemStyle: { borderRadius: 999 },
     tabBarButton: (props) => <Pressable {...props} ref={props.ref as Ref<ComponentRef<typeof Pressable>>}
-      style={[props.style, { borderRadius: 999, overflow: 'hidden' }]} />,
-    tabBarStyle: { position: 'absolute', width: capsuleWidth, left: (width - capsuleWidth) / 2, bottom: insets.bottom + 24, height: 64,
+      style={[props.style, { borderRadius: 999, overflow: 'hidden', justifyContent: 'center', paddingVertical: 2 }]} />,
+    tabBarStyle: { position: 'absolute', width: capsuleWidth, start: capsuleInset, end: capsuleInset, bottom: insets.bottom + 24, height: 64,
       padding: 5, paddingBottom: 5, paddingTop: 5, borderRadius: 999, borderWidth: 1, borderTopWidth: 1,
-      borderColor: colors.tabBarBorder, backgroundColor: colors.backgroundElement, elevation: 0 },
-  }}>
+      borderColor: colors.tabBarBorder, backgroundColor: colors.backgroundElement, elevation: 0,
+      ...(route.name === 'index' && (route.params as { _entryOpen?: string } | undefined)?._entryOpen === '1' ? { display: 'none' as const } : {}) },
+  })}>
     {(['index', 'budgets', 'insights', 'settings'] as const).map((name, index) => <Tabs.Screen key={name} name={name}
       options={{ title: ['Home', 'Budgets', 'Insights', 'Settings'][index],
         tabBarIcon: ({ color }) => <TabIcon name={name} color={color ?? colors.text} /> }} />)}

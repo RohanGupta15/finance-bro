@@ -1,4 +1,4 @@
-import { useFocusEffect, useNavigation } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,12 +37,11 @@ export function Home() {
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
   const [mode, setMode] = useState<'feed' | 'entry' | 'paste'>('feed');
-  const navigation = useNavigation();
+  const router = useRouter();
   useEffect(() => {
     if (Platform.OS !== 'android') return;
-    navigation.setOptions({ tabBarStyle: mode === 'feed' ? undefined : { display: 'none' } });
-    return () => navigation.setOptions({ tabBarStyle: undefined });
-  }, [mode, navigation]);
+    router.setParams({ _entryOpen: mode === 'feed' ? '0' : '1' });
+  }, [mode, router]);
   const [selected, setSelected] = useState<Row>();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
