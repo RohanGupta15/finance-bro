@@ -1,5 +1,5 @@
 ---
-name: Quicksave
+name: Finance Bro
 description: An expense binder that reads bank texts, keeps the amount and forgets the message.
 colors:
   ink: "#17181D"
@@ -138,13 +138,15 @@ components:
     size: "44px"
 ---
 
-# Design System: Quicksave
+# Design System: Finance Bro
+
+The reference screenshots predate the current naming decision. Their app-name and version footers are retired and must not be copied into the shipped UI. Finance Bro is the repository's working name; Ink and Stamps remains the approved visual direction.
 
 ## Overview
 
 **Creative North Star: "Ink and Stamps"**
 
-Quicksave looks like a printed binder you carry in your pocket. Every surface is paper, every edge is drawn in ink, and colour arrives only the way a rubber stamp would: small, deliberate, and meaning something. A transaction is a card pulled from a bank text and filed; a month is a binder; a category is a stamp on the corner. The app never glows, never gradients, and never decorates a number to make it feel exciting. Money is set in a typewriter face because it is data, and the words around it are set in a warm grotesque because they are talking to a person.
+Finance Bro looks like a printed binder you carry in your pocket. Every surface is paper, every edge is drawn in ink, and colour arrives only the way a rubber stamp would: small, deliberate, and meaning something. A transaction is a card pulled from a bank text and filed; a month is a binder; a category is a stamp on the corner. The app never glows, never gradients, and never decorates a number to make it feel exciting. Money is set in a typewriter face because it is data, and the words around it are set in a warm grotesque because they are talking to a person.
 
 The light world (C2) is cool off-white paper with 2px ink outlines and zero-blur offset shadows that read as print registration, not light. The dark world (C3) is the same binder at night: flat charcoal surfaces, outlines softened to a slate border, no offset shadows, and stamp colours lifted and muted so they don't vibrate on a dark ground. Both worlds share one highlighter yellow, and it is rationed.
 

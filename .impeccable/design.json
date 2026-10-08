@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-10-07T14:41:40.974Z",
-  "title": "Design System: Quicksave",
+  "title": "Design System: Finance Bro",
   "extensions": {
     "colorMeta": {
       "ink": {
@@ -510,7 +510,7 @@
   ],
   "narrative": {
     "northStar": "Ink and Stamps",
-    "overview": "Quicksave looks like a printed binder you carry in your pocket. Every surface is paper, every edge is drawn in ink, and colour arrives only the way a rubber stamp would: small, deliberate, and meaning something. A transaction is a card pulled from a bank text and filed; a month is a binder; a category is a stamp on the corner. The app never glows, never gradients, and never decorates a number to make it feel exciting. Money is set in a typewriter face because it is data, and the words around it are set in a warm grotesque because they are talking to a person.\n\nThe light world (C2) is cool off-white paper with 2px ink outlines and zero-blur offset shadows that read as print registration, not light. The dark world (C3) is the same binder at night: flat charcoal surfaces, outlines softened to a slate border, no offset shadows, and stamp colours lifted and muted so they don't vibrate on a dark ground. Both worlds share one highlighter yellow, and it is rationed.\n\nDensity is a pocket notebook: one column, 20px gutters, generous 28px breaks between sections, rows tall enough to tap. The floating glass tab bar is the only translucent surface, because it is the one piece of system chrome; everything under it is opaque paper.",
+    "overview": "Finance Bro looks like a printed binder you carry in your pocket. Every surface is paper, every edge is drawn in ink, and colour arrives only the way a rubber stamp would: small, deliberate, and meaning something. A transaction is a card pulled from a bank text and filed; a month is a binder; a category is a stamp on the corner. The app never glows, never gradients, and never decorates a number to make it feel exciting. Money is set in a typewriter face because it is data, and the words around it are set in a warm grotesque because they are talking to a person.\n\nThe light world (C2) is cool off-white paper with 2px ink outlines and zero-blur offset shadows that read as print registration, not light. The dark world (C3) is the same binder at night: flat charcoal surfaces, outlines softened to a slate border, no offset shadows, and stamp colours lifted and muted so they don't vibrate on a dark ground. Both worlds share one highlighter yellow, and it is rationed.\n\nDensity is a pocket notebook: one column, 20px gutters, generous 28px breaks between sections, rows tall enough to tap. The floating glass tab bar is the only translucent surface, because it is the one piece of system chrome; everything under it is opaque paper.",
     "keyCharacteristics": [
       "Ink outlines (2px) and offset ink shadows in light mode; flat tonal layers in dark mode.",
       "Colour lives in category stamps and one highlighter. Charts, bars and chips are ink.",
