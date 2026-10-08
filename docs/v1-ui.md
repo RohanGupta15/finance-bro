@@ -35,6 +35,16 @@ The calmer paste flow was also exercised with fictional data on 2026-10-08:
 
 After restoring normal source configuration, frozen install, pnpm check (28 mobile/data and 31 parser tests), Expo dependency check, Expo Doctor (20/20), Android/iOS/web bundle exports and git diff --check passed again. CI and native APK checks remain revision-specific.
 
+The accessibility checkpoint adds explicit web pressed/expanded/busy and progress-value attributes while retaining native states. Focus rings cover buttons, radios, checkboxes and tabs. Empty Home avoids repeating Paste when More is open. Targeted fictional-data checks on 2026-10-08 observed:
+
+- Browser: Home Cards/Chart and filters announced selection; More and entry disclosures announced expanded/collapsed states. Enter opened Add, Space selected Income, and the focused choice had a visible outline. Discard was a one-shot action, not a toggle.
+- A fictional expense category saved. A three-decimal budget amount was rejected with input retained; a ₹1,000 category limit saved and persisted after reload. The overall progress announced 75% for ₹750 recorded spending, and the category progress announced zero.
+- A ₹499.99 fictional bill saved, changed to Paid and stayed paid after reload. Recorded spending remained ₹750 and the ledger still contained one entry.
+- The browser downloaded a CSV containing that one posted ₹750.00 paste expense. Its columns contained no raw message body, and the paid bill was not exported as a ledger entry. This download check does not prove every CSV edge case or platform destination.
+- Android: on a separate empty test database, Cards was selected; Expense/Income native selected states followed the chosen type. Opening More left exactly one Paste action. The isolated database and device hierarchy capture were removed and the temporary filename restored; normal financial data was not inspected.
+
+These are targeted keyboard/accessibility-tree checks, not a complete screen-reader or large-text certification. The local screenshot contains fictional data and is not published to GitHub.
+
 ## Remaining release gates
 
 - Complete Android ambiguous/ignored/corrected/deleted replay and failure-recovery checks; repeat browser corrected/deleted replay after the latest disclosure refinements.
