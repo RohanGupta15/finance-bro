@@ -6,6 +6,8 @@ The frontend connects the shared local data API to Home, entry/edit/delete, past
 
 The user requested minimal text, minimal overwhelm and low effort after a full workday. Home names the purpose; new entries require only an amount. Date defaults to today and preserves the current India clock; edits preserve the original clock. Category, account and note are optional details. Filters, the full entry list, additional insights and calculation explanations start collapsed. Validation, explicit save errors and discard protection remain.
 
+Home, Budgets and Insights use a month sheet with entry months plus the current and viewed month. Previous/next controls inside the sheet keep transaction-free and future budget months reachable.
+
 Android uses Router tabs for the reference floating capsule, with symmetric side insets and fully visible labels. Entry and paste hide that capsule. The entry footer avoids the keyboard and bottom system area. iOS retains NativeTabs and requires Rohan's device validation.
 
 ## Observed validation

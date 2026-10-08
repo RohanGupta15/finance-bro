@@ -10,6 +10,8 @@ import { Fonts, Motion, Radius, Spacing, Type } from '@/constants/theme';
 import { getLedger } from '@/db';
 import { useTheme } from '@/hooks/use-theme';
 import { indiaDate, money } from '@/utils/display';
+import { monthPickerRows, type MonthPickerRow } from '@/utils/month-picker';
+import { shiftMonth } from '@/utils/month-pace';
 import { ease, fadeIn } from '@/utils/motion';
 
 
@@ -64,8 +66,6 @@ export function Segmented<T extends string>({ options, value, onChange, label }:
   </View>;
 }
 
-type MonthRow = { month: string; expensePaise: number; entryCount: number };
-
 function monthName(month: string, withYear: boolean) {
   return new Intl.DateTimeFormat('en-IN', { month: 'long', ...(withYear && { year: 'numeric' }), timeZone: 'UTC' })
     .format(new Date(`${month}-01T00:00:00Z`));
@@ -81,20 +81,17 @@ export function MonthPicker({ month, onChange, variant = 'pill' }: {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
-  const [months, setMonths] = useState<MonthRow[] | null>(null);
+  const [months, setMonths] = useState<MonthPickerRow[] | null>(null);
   const [failed, setFailed] = useState(false);
   const current = indiaDate().slice(0, 7);
+  const monthRows = monthPickerRows(months ?? [], current, month);
   const showYear = month.slice(0, 4) !== current.slice(0, 4);
   const label = monthName(month, showYear);
 
   const show = useCallback(() => {
     setOpen(true); setFailed(false);
-    getLedger().then((ledger) => ledger.listEntryMonths()).then((rows) => {
-      // The month on screen stays listed even before it has entries, so the list always contains "here".
-      setMonths(rows.some((row) => row.month === month) ? rows
-        : [...rows, { month, expensePaise: 0, entryCount: 0 }].sort((left, right) => (left.month < right.month ? 1 : -1)));
-    }).catch(() => setFailed(true));
-  }, [month]);
+    getLedger().then((ledger) => ledger.listEntryMonths()).then(setMonths).catch(() => setFailed(true));
+  }, []);
 
   const trigger = variant === 'title'
     ? <Pressable accessibilityRole="button" accessibilityLabel={`${label}. Choose month`} onPress={show}
@@ -115,10 +112,17 @@ export function MonthPicker({ month, onChange, variant = 'pill' }: {
       <Animated.View entering={SlideInDown.duration(Motion.standard).easing(ease)}
         style={[styles.sheet, { backgroundColor: colors.background, borderColor: colors.border, paddingBottom: insets.bottom + 16 }]}>
         <View style={[styles.grabber, { backgroundColor: colors.textMuted }]} />
-        <ThemedText style={[Type.sectionTitle, styles.sheetTitle]} accessibilityRole="header">Choose month</ThemedText>
-        {failed ? <ThemedText style={[Type.note, styles.sheetTitle, { color: colors.over }]} accessibilityRole="alert">Couldn’t load months. Close and try again.</ThemedText> : null}
+        <View style={styles.sheetHeader}>
+          <MonthStepButton label="Previous month" icon="back" disabled={month === '0001-01'} onPress={() => onChange(shiftMonth(month, -1))} />
+          <View style={styles.sheetHeading}>
+            <ThemedText style={Type.sectionTitle} accessibilityRole="header">Choose month</ThemedText>
+            <ThemedText style={[Type.label, { color: colors.textSecondary }]}>{monthName(month, true)}</ThemedText>
+          </View>
+          <MonthStepButton label="Next month" icon="next" disabled={month === '9999-12'} onPress={() => onChange(shiftMonth(month, 1))} />
+        </View>
+        {failed ? <ThemedText style={[Type.note, styles.sheetError, { color: colors.over }]} accessibilityRole="alert">Couldn’t load months. Close and try again.</ThemedText> : null}
         <ScrollView style={styles.sheetList} contentContainerStyle={styles.sheetContent}>
-          {(months ?? []).map((row, index) => {
+          {monthRows.map((row, index) => {
             const selected = row.month === month;
             return <Animated.View key={row.month} entering={fadeIn(Math.min(index, 8) * 30)}>
               <Pressable accessibilityRole="button" accessibilityState={{ selected }}
@@ -142,6 +146,17 @@ export function MonthPicker({ month, onChange, variant = 'pill' }: {
   </>;
 }
 
+function MonthStepButton({ label, icon, disabled, onPress }: {
+  label: string; icon: IconName; disabled: boolean; onPress: () => void;
+}) {
+  const colors = useTheme();
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} aria-label={label}
+    disabled={disabled} onPress={onPress}
+    style={({ pressed }) => [styles.monthStepButton, { borderColor: colors.border, backgroundColor: colors.backgroundElement, opacity: disabled ? 0.5 : pressed ? 0.72 : 1 }]}>
+    <Icon name={icon} size={20} color={colors.text} />
+  </Pressable>;
+}
+
 const styles = StyleSheet.create({
   button: { minHeight: 44, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, flexDirection: 'row', gap: 8,
     borderWidth: 2, borderRadius: Radius.pill, justifyContent: 'center', alignItems: 'center' },
@@ -154,7 +169,10 @@ const styles = StyleSheet.create({
   backdrop: StyleSheet.absoluteFill,
   sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '75%', borderTopLeftRadius: Radius.hero, borderTopRightRadius: Radius.hero, borderWidth: 2, borderBottomWidth: 0, paddingTop: 10 },
   grabber: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, opacity: 0.5 },
-  sheetTitle: { paddingHorizontal: Spacing.gutter, paddingTop: 14, paddingBottom: 8 },
+  sheetHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: Spacing.gutter, paddingTop: 14, paddingBottom: 8 },
+  sheetHeading: { flex: 1, alignItems: 'center', gap: 2 },
+  sheetError: { paddingHorizontal: Spacing.gutter, paddingBottom: 8 },
+  monthStepButton: { width: 48, height: 48, borderWidth: 2, borderRadius: Radius.control, alignItems: 'center', justifyContent: 'center' },
   sheetList: { flexGrow: 0 },
   sheetContent: { paddingHorizontal: 12, gap: 2 },
   monthRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, paddingHorizontal: 12, borderRadius: Radius.control },

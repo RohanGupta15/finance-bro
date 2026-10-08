@@ -268,7 +268,7 @@ Soft-cornered paper with drawn edges. Cards are 18px, hero cards 22px, controls 
 - One glyph set: SF Symbols on iOS, Material Symbols on Android and web (`expo-symbols`, `src/components/icon.tsx`). Every category, account type and repeated action has a glyph; use the glyph instead of a word when the meaning survives (filter, add, paste, edit, chevrons). Glyphs in a filled stamp take paper ink; outlined glyph tiles are 36–40px with a 2px outline.
 
 ### Month Picker
-- The month is a control, never a pair of previous/next buttons. On Home it is the screen title itself ("October ⌄"); elsewhere a pill beside the title. It opens a bottom sheet of months that hold entries, newest first, each with its spend and entry count; the open month is always listed and marked with an ink row and a check.
+- The month is a sheet-first control, not exposed as a pair of previous/next buttons. On Home it is the screen title itself ("October ⌄"); elsewhere a pill beside the title. The sheet lists entry months newest first, plus the current and viewed month even without entries; each row shows spend and entry count. Compact previous/next controls inside the sheet reach empty and future months for budget planning.
 
 ### Lists
 - Entries are grouped under day labels (Today, Yesterday, "Tue, 6 Oct") in Label type. Each row: a 40px outlined glyph tile, a Row Title, one Label line of meta, and the amount in Space Mono on the right. Transfers and cash withdrawals carry no sign and sit in muted ink; failed amounts are struck through. 1.5px rules between rows in a group.
