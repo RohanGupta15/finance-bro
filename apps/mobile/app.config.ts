@@ -38,7 +38,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   web: { bundler: 'metro', output: 'single' },
   plugins: [
-    'expo-router',
+    ['expo-router', {
+      headers: {
+        'Cross-Origin-Embedder-Policy': 'credentialless',
+        'Cross-Origin-Opener-Policy': 'same-origin',
+      },
+    }],
+    'expo-sqlite',
+    'expo-secure-store',
+    'expo-image',
     [
       'expo-splash-screen',
       {
