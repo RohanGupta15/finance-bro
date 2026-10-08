@@ -91,6 +91,7 @@ function Choice({
   return (
     <Pressable
       accessibilityRole={accessibilityRole}
+      aria-checked={selected}
       accessibilityState={{ checked: selected, disabled }}
       disabled={disabled}
       onPress={onPress}
@@ -403,7 +404,7 @@ export function PasteForm({
   ];
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <ScrollView
           style={styles.scroll}
@@ -523,18 +524,18 @@ export function PasteForm({
 
               {detailsVisible ? <View style={styles.details}>
                 <Field label="Direction">
-                  <View style={styles.choices}>
+                  <View style={styles.choices} accessibilityRole="radiogroup" accessibilityLabel="Transaction direction">
                     {directions.map((value) => <Choice key={value} label={value === 'debit' ? 'Debit' : 'Credit'} selected={direction === value} disabled={busy} onPress={() => changeDirection(value)} />)}
                   </View>
                 </Field>
                 <Field label="Transaction type">
-                  <View style={styles.choices}>
+                  <View style={styles.choices} accessibilityRole="radiogroup" accessibilityLabel="Transaction type">
                     {kinds.map((value) => <Choice key={value} label={displayKind(value)} selected={kind === value} disabled={busy} onPress={() => changeKind(value)} />)}
                   </View>
                   {!consistentKind || !consistentIncome ? <Text style={[styles.error, { color: colors.over }]}>Expenses must be debits and income must be credits.</Text> : null}
                 </Field>
                 <Field label="Status">
-                  <View style={styles.choices}>
+                  <View style={styles.choices} accessibilityRole="radiogroup" accessibilityLabel="Transaction status">
                     {statuses.map((value) => <Choice key={value} label={value} selected={status === value} disabled={busy} onPress={() => setStatus(value)} />)}
                   </View>
                 </Field>
@@ -555,7 +556,7 @@ export function PasteForm({
                   <TextInput accessibilityLabel="Merchant or person" editable={!busy} onChangeText={setMerchant} placeholder="Optional" placeholderTextColor={colors.textSecondary} style={inputStyle} value={merchant} />
                 </Field>
                 <Field label="Category">
-                  <View style={styles.choices}>
+                  <View style={styles.choices} accessibilityRole="radiogroup" accessibilityLabel="Transaction category">
                     <Choice label="No category" selected={categoryId === null} disabled={busy} onPress={() => setCategoryId(null)} />
                     {availableCategories.map((category) => (
                       <Choice key={category.id} label={category.name} selected={categoryId === category.id} disabled={busy} onPress={() => setCategoryId(category.id)} />
@@ -565,7 +566,7 @@ export function PasteForm({
                   {!selectedCategoryIsValid ? <Text style={[styles.error, { color: colors.over }]}>Choose a category that matches this transaction type.</Text> : null}
                 </Field>
                 <Field label="Account">
-                  <View style={styles.choices}>
+                  <View style={styles.choices} accessibilityRole="radiogroup" accessibilityLabel="Transaction account">
                     <Choice label="No account" selected={accountId === null} disabled={busy} onPress={() => setAccountId(null)} />
                     {accounts.map((account) => {
                       const detail = [account.institution, account.last4 ? '••' + account.last4 : null].filter(Boolean).join(' · ');
@@ -583,6 +584,7 @@ export function PasteForm({
 
                 <Pressable
                   accessibilityRole="checkbox"
+                  aria-checked={excludeFromStats}
                   accessibilityState={{ checked: excludeFromStats, disabled: busy }}
                   disabled={busy}
                   onPress={() => setExcludeFromStats((value) => !value)}
@@ -600,6 +602,7 @@ export function PasteForm({
                   <Text style={[styles.bodyCopy, { color: colors.textSecondary }]}>Earlier pastes can’t be checked. Review every paste; duplicates may be added.</Text>
                   <Pressable
                     accessibilityRole="checkbox"
+                    aria-checked={riskAcknowledged}
                     accessibilityState={{ checked: riskAcknowledged, disabled: busy }}
                     disabled={busy}
                     onPress={() => setRiskAcknowledged((value) => !value)}
@@ -646,6 +649,8 @@ export function PasteForm({
             <View style={styles.actions}>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={busy ? 'Saving transaction' : duplicateReviewRequired ? 'Save despite duplicate risk' : 'Save transaction'}
+                aria-busy={busy}
                 accessibilityState={{ disabled: !canSave, busy }}
                 disabled={!canSave}
                 onPress={save}
@@ -660,6 +665,8 @@ export function PasteForm({
             <View style={styles.actions}>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={busy ? 'Reading message' : 'Review message'}
+                aria-busy={busy}
                 accessibilityState={{ disabled: !canPrepare, busy }}
                 disabled={!canPrepare}
                 onPress={prepare}
@@ -728,7 +735,7 @@ const styles = StyleSheet.create({
   actions: { gap: Spacing.two },
   actionRow: { flexDirection: 'row', gap: Spacing.two },
   actionButton: { flex: 1 },
-  primaryButton: { minHeight: 52, paddingHorizontal: Spacing.three, alignItems: 'center', justifyContent: 'center', borderWidth: Stroke.ink, borderRadius: Radius.card, shadowOffset: { width: 2, height: 3 }, shadowOpacity: 0.18, shadowRadius: 0 },
+  primaryButton: { minHeight: 52, paddingHorizontal: Spacing.three, alignItems: 'center', justifyContent: 'center', borderWidth: Stroke.ink, borderRadius: Radius.pill, shadowOffset: { width: 2, height: 3 }, shadowOpacity: 0.18, shadowRadius: 0 },
   primaryLabel: { ...Type.rowTitle },
   secondaryButton: { minHeight: 48, paddingHorizontal: Spacing.three, alignItems: 'center', justifyContent: 'center', borderWidth: Stroke.ink, borderRadius: Radius.pill },
   secondaryLabel: { ...Type.body },
