@@ -13,6 +13,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: IS_DEV ? 'finance-bro (dev)' : 'finance-bro',
   slug: 'finance-bro',
+  owner: 'starforge-lab',
+  extra: {
+    eas: { projectId: 'd958cc1c-c6f5-449f-a397-8a106d5790d9' },
+  },
   version: '0.1.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
@@ -34,7 +38,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   web: { bundler: 'metro', output: 'single' },
   plugins: [
-    'expo-router',
+    ['expo-router', {
+      headers: {
+        'Cross-Origin-Embedder-Policy': 'credentialless',
+        'Cross-Origin-Opener-Policy': 'same-origin',
+      },
+    }],
+    'expo-sqlite',
+    'expo-secure-store',
+    'expo-image',
     [
       'expo-splash-screen',
       {
