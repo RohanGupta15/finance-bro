@@ -18,7 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { DuplicateReviewRequiredError, type DataLayer } from '@/db';
 import { transactionDirections, transactionKinds, transactionStatuses } from '@/db/schema';
 import type { PastePreparation, ReviewCorrections } from '@/imports/paste';
-import { amountInput, indiaDate, exactMoney, parseIndiaDate } from '@/utils/display';
+import { amountInput, indiaDate, indiaTime, exactMoney, parseIndiaDate, parseIndiaDateTime } from '@/utils/display';
 import { parseInrAmount } from '@/db/manual';
 import { Fonts, Radius, Spacing, Stroke, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -55,6 +55,15 @@ function safeDateText(timestamp: number | undefined): string {
   if (timestamp === undefined || !Number.isFinite(timestamp)) return '';
   try {
     return indiaDate(new Date(timestamp));
+  } catch {
+    return '';
+  }
+}
+
+function safeTimeText(timestamp: number | undefined): string {
+  if (timestamp === undefined || !Number.isFinite(timestamp)) return '';
+  try {
+    return indiaTime(new Date(timestamp));
   } catch {
     return '';
   }
@@ -131,6 +140,8 @@ export function PasteForm({
   const [kind, setKind] = useState<Kind | ''>('');
   const [status, setStatus] = useState<Status | ''>('');
   const [dateText, setDateText] = useState('');
+  const [timeText, setTimeText] = useState('');
+  const [separatePayment, setSeparatePayment] = useState(false);
   const [merchant, setMerchant] = useState('');
   const [reference, setReference] = useState('');
   const [note, setNote] = useState('');
@@ -178,16 +189,32 @@ export function PasteForm({
     }
   }, [dateText]);
 
+  const separatePaymentAt = useMemo(() => {
+    if (!separatePayment) return null;
+    try {
+      return parseIndiaDateTime(dateText, timeText);
+    } catch {
+      return null;
+    }
+  }, [dateText, separatePayment, timeText]);
+
   const duplicateReviewRequired = prepared?.kind === 'needs-review' &&
     (prepared.duplicateReviewRequired || riskRequiredAfterError);
+  const canOfferSeparatePayment = prepared?.kind === 'needs-review' && prepared.collision !== null &&
+    prepared.identity.dedupeKey.startsWith('body:') && !prepared.candidate?.upiRef && !reference.trim();
+  const sameCollisionSecond = Boolean(
+    separatePayment && prepared?.kind === 'needs-review' && prepared.collision && separatePaymentAt &&
+    Math.floor(prepared.collision.occurredAt / 1_000) === Math.floor(separatePaymentAt.getTime() / 1_000),
+  );
   const consistentKind = kind !== 'expense' || direction === 'debit';
   const consistentIncome = kind !== 'income' || direction === 'credit';
   const selectedCategoryIsValid = categoryId === null || availableCategories.some((category) => category.id === categoryId);
   const canPrepare = body.trim().length > 0 && !busy;
   const reviewFieldsValid = Boolean(prepared?.kind === 'needs-review' && amountValue.amountPaise !== null &&
     direction && kind && status && parsedDate && consistentKind && consistentIncome && selectedCategoryIsValid);
-  const detailsVisible = detailsOpen || !reviewFieldsValid;
-  const canSave = reviewFieldsValid && (!duplicateReviewRequired || riskAcknowledged) && !busy;
+  const detailsVisible = separatePayment || detailsOpen || !reviewFieldsValid;
+  const canSave = reviewFieldsValid && (!duplicateReviewRequired || riskAcknowledged) &&
+    (!separatePayment || (canOfferSeparatePayment && separatePaymentAt !== null && !sameCollisionSecond)) && !busy;
   const dirty = !outcome && (body.length > 0 || sender.length > 0 || prepared?.kind === 'needs-review');
 
   function resetReview() {
@@ -201,6 +228,8 @@ export function PasteForm({
     setKind('');
     setStatus('');
     setDateText('');
+    setTimeText('');
+    setSeparatePayment(false);
     setMerchant('');
     setReference('');
     setNote('');
@@ -239,12 +268,15 @@ export function PasteForm({
       setAccounts(nextAccounts);
       setPrepared(result);
       setOutcome(null);
+      setSeparatePayment(false);
       setRiskAcknowledged(false);
       setRiskRequiredAfterError(false);
       if (result.kind === 'needs-review') {
         const candidate = result.candidate;
         const nextAmount = safeAmountText(candidate?.amountPaise);
-        const nextDate = safeDateText(candidate?.occurredAt);
+        const collisionAt = result.collision?.occurredAt;
+        const nextDate = safeDateText(collisionAt ?? candidate?.occurredAt);
+        const nextTime = safeTimeText(collisionAt ?? candidate?.occurredAt);
         let candidateIsComplete = Boolean(
           candidate?.direction && candidate.kind && candidate.status && nextAmount && nextDate &&
           (candidate.kind !== 'expense' || candidate.direction === 'debit') &&
@@ -264,6 +296,7 @@ export function PasteForm({
         setKind(candidate?.kind ?? '');
         setStatus(candidate?.status ?? '');
         setDateText(nextDate);
+        setTimeText(nextTime);
         setMerchant(candidate?.counterparty ?? candidate?.vpa ?? '');
         setReference(candidate?.upiRef ?? '');
       }
@@ -287,7 +320,9 @@ export function PasteForm({
       amountPaise = parseInrAmount(amountText);
       const candidateTime = prepared.candidate ? new Date(prepared.candidate.occurredAt) : undefined;
       const preserveTimeFrom = candidateTime && Number.isFinite(candidateTime.getTime()) ? candidateTime : undefined;
-      occurredAt = parseIndiaDate(dateText, preserveTimeFrom);
+      occurredAt = separatePayment
+        ? separatePaymentAt ?? parseIndiaDateTime(dateText, timeText)
+        : parseIndiaDate(dateText, preserveTimeFrom);
     } catch {
       setError('Check the amount and India calendar date before saving.');
       return;
@@ -321,7 +356,23 @@ export function PasteForm({
     try {
       const result = await ledger.saveReviewedPaste(prepared, corrections, {
         acknowledgeDuplicateRisk: riskAcknowledged,
+        ...(separatePaymentAt ? { separatePaymentAt } : {}),
       });
+      if (result === 'duplicate' && separatePayment) {
+        setError('This exact date and second is already handled. If this is another purchase, choose its actual different time or enter it manually.');
+        return;
+      }
+      if (result === 'duplicate' && prepared.collision === null &&
+          prepared.identity.dedupeKey.startsWith('body:') && !prepared.candidate?.upiRef) {
+        const collision = await ledger.getPasteCollision(prepared.identity.id);
+        if (collision && mountedRef.current) {
+          setPrepared({ ...prepared, collision });
+          setDateText(safeDateText(collision.occurredAt));
+          setTimeText(safeTimeText(collision.occurredAt));
+          setError('A matching paste was saved while you reviewed. Confirm whether this is the same message or a separate payment.');
+          return;
+        }
+      }
       if (result === 'inserted') void confirmSave();
       if (mountedRef.current) setOutcome(result);
     } catch (cause) {
@@ -330,6 +381,8 @@ export function PasteForm({
         setRiskRequiredAfterError(true);
         setRiskAcknowledged(false);
         setError('The import key changed since review. Check the duplicate warning before saving.');
+      } else if (cause instanceof RangeError && cause.message.includes('different actual time')) {
+        setError('Choose a different actual time. Purchases in the same second must be entered manually.');
       } else {
         setError('Could not save this review. Your corrections are still here; try again.');
       }
@@ -497,6 +550,22 @@ export function PasteForm({
                 <Text style={[styles.bodyCopy, { color: colors.textSecondary }]}>No transaction details were found. Fill in the required fields.</Text>
               )}
 
+              {canOfferSeparatePayment ? (
+                <View style={[styles.warning, { borderTopColor: colors.rule }]}>
+                  <Text style={[styles.warningTitle, { color: colors.text }]}>Same message or separate payment?</Text>
+                  <Text style={[styles.bodyCopy, { color: colors.textSecondary }]}>
+                    {prepared.collision?.deleted
+                      ? 'This message matches a saved paste that was later deleted. It stays handled unless you deliberately choose another purchase.'
+                      : 'An identical message is already recorded. It stays the same message unless you deliberately choose another purchase.'}
+                  </Text>
+                  <View style={styles.choices} accessibilityRole="radiogroup" accessibilityLabel="Resolve identical paste">
+                    <Choice label="Same message" selected={!separatePayment} disabled={busy} onPress={() => { setSeparatePayment(false); setError(''); }} />
+                    <Choice label="Separate payment" selected={separatePayment} disabled={busy} onPress={() => { setSeparatePayment(true); setDetailsOpen(true); setError(''); }} />
+                  </View>
+                  {separatePayment ? <Text style={[styles.hint, { color: colors.textSecondary }]}>The existing India date and time are filled in below. Set this purchase’s actual time; entries in the same second must be added manually.</Text> : null}
+                </View>
+              ) : null}
+
               <Field label="Amount (₹)" hint={amountValue.message}>
                 <TextInput
                   accessibilityLabel="Transaction amount in rupees"
@@ -511,7 +580,7 @@ export function PasteForm({
                 />
               </Field>
 
-              {reviewFieldsValid ? (
+              {reviewFieldsValid && !separatePayment ? (
                 <Pressable
                   accessibilityRole="button"
                   accessibilityState={{ expanded: detailsVisible, disabled: busy }}
@@ -555,6 +624,24 @@ export function PasteForm({
                     value={dateText}
                   />
                   {dateText && !parsedDate ? <Text style={[styles.error, { color: colors.over }]}>Enter a real date as YYYY-MM-DD.</Text> : null}
+                  {separatePayment ? (
+                    <>
+                      <Text style={[styles.label, { color: colors.text }]}>Transaction time (India)</Text>
+                      <TextInput
+                        accessibilityLabel="Transaction time in India, 24-hour hours minutes seconds"
+                        editable={!busy}
+                        keyboardType="numbers-and-punctuation"
+                        maxLength={8}
+                        onChangeText={setTimeText}
+                        placeholder="HH:MM:SS"
+                        placeholderTextColor={colors.textSecondary}
+                        style={inputStyle}
+                        value={timeText}
+                      />
+                      {!separatePaymentAt ? <Text style={[styles.error, { color: colors.over }]}>Enter a valid 24-hour time as HH:MM:SS.</Text> : null}
+                      {sameCollisionSecond ? <Text style={[styles.error, { color: colors.over }]}>Choose a different actual time. Purchases in the same second must be entered manually.</Text> : null}
+                    </>
+                  ) : null}
                 </Field>
                 <Field label="Merchant or person">
                   <TextInput accessibilityLabel="Merchant or person" editable={!busy} onChangeText={setMerchant} placeholder="Optional" placeholderTextColor={colors.textSecondary} style={inputStyle} value={merchant} />
@@ -580,7 +667,7 @@ export function PasteForm({
                   {accounts.length === 0 ? <Text style={[styles.hint, { color: colors.textSecondary }]}>No accounts set up; leave blank.</Text> : null}
                 </Field>
                 <Field label="UPI reference (optional)">
-                  <TextInput accessibilityLabel="UPI reference, optional" autoCapitalize="none" autoCorrect={false} editable={!busy} onChangeText={setReference} placeholder="Reference number" placeholderTextColor={colors.textSecondary} style={inputStyle} value={reference} />
+                  <TextInput accessibilityLabel="UPI reference, optional" autoCapitalize="none" autoCorrect={false} editable={!busy} onChangeText={(value) => { setReference(value); if (value.trim()) setSeparatePayment(false); }} placeholder="Reference number" placeholderTextColor={colors.textSecondary} style={inputStyle} value={reference} />
                 </Field>
                 <Field label="Note (optional)">
                   <TextInput accessibilityLabel="Transaction note, optional" editable={!busy} multiline onChangeText={setNote} placeholder="Add context for yourself" placeholderTextColor={colors.textSecondary} style={[...inputStyle, styles.noteInput]} textAlignVertical="top" value={note} />
@@ -653,13 +740,13 @@ export function PasteForm({
             <View style={styles.actions}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={busy ? 'Saving transaction' : duplicateReviewRequired ? 'Save despite duplicate risk' : 'Save transaction'}
+                accessibilityLabel={busy ? 'Saving transaction' : duplicateReviewRequired ? separatePayment ? 'Save separate payment despite duplicate risk' : 'Save despite duplicate risk' : separatePayment ? 'Save separate payment' : 'Save transaction'}
                 aria-busy={busy}
                 accessibilityState={{ disabled: !canSave, busy }}
                 disabled={!canSave}
                 onPress={save}
                 style={({ pressed }) => [styles.primaryButton, { backgroundColor: colors.accent, borderColor: colors.border, opacity: !canSave ? 0.45 : pressed ? 0.78 : 1 }]}>
-                <Text style={[styles.primaryLabel, { color: colors.onAccent }]}>{busy ? 'Saving…' : duplicateReviewRequired ? 'Save anyway' : 'Save transaction'}</Text>
+                <Text style={[styles.primaryLabel, { color: colors.onAccent }]}>{busy ? 'Saving…' : duplicateReviewRequired ? separatePayment ? 'Save separate payment anyway' : 'Save anyway' : separatePayment ? 'Save separate payment' : 'Save transaction'}</Text>
               </Pressable>
               <Pressable accessibilityRole="button" accessibilityState={{ disabled: busy }} disabled={busy} onPress={requestCancel} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border, opacity: busy ? 0.45 : pressed ? 0.7 : 1 }]}>
                 <Text style={[styles.secondaryLabel, { color: colors.text }]}>Cancel</Text>

@@ -73,6 +73,10 @@ Frozen installation, typecheck, lint, 34 mobile/data tests plus 31 parser tests,
 
 On the combined #40/#41 revision, browser checks with fictional data confirmed that tapping Uncategorized shows only the uncategorized entry, and tapping it again restores all entries. The month sheet reached a future month with no entries, retained the current month, and returned to it. A fictional November category budget persisted after reload and remained reachable through Next month despite having no transactions. These checks do not establish native-device, large-text or screen-reader behavior for the revised controls.
 
+## Identical no-reference paste collisions — 2026-10-09
+
+When the sender/body identity already exists and the parsed message has no UPI reference, review offers “Same message” by default or an explicit “Separate payment” choice. The separate path exposes the existing India date/time and requires a different actual time to the nearest second; two purchases in the same second must be entered manually. A selected timestamp produces a stable retry identity. UPI-reference matches remain unsplittable. Automated SQLite tests cover two identical purchases, a retry of the selected timestamp, corrected/deleted replay protection, same-second validation, key identity and absence of raw message text. This source revision has not yet had a browser or physical-device interaction check.
+
 ## Remaining release gates
 
 - Complete Android ambiguous/ignored/corrected/deleted replay and failure-recovery checks; repeat browser corrected/deleted replay after the latest disclosure refinements.

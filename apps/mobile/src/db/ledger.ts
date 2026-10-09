@@ -483,6 +483,13 @@ export function createLedger(client: LedgerSQLiteClient, migrations: LedgerMigra
         .where(and(eq(transactions.id, id), isNull(transactions.deletedAt)))
         .returning({ id: transactions.id }).all().then((rows) => rows.length > 0);
     },
+    async findPasteCollision(id: string) {
+      assertId(id);
+      return db.select({ occurredAt: transactions.occurredAt, deletedAt: transactions.deletedAt })
+        .from(transactions)
+        .where(and(eq(transactions.id, id), eq(transactions.source, 'paste')))
+        .get();
+    },
     async upsertImportedTransaction(input: ImportedTransaction): Promise<boolean> {
       assertRecord(input, 'transaction');
       assertValidTransactionValues(input, { imported: true });
