@@ -23,8 +23,16 @@ Sources: [libsodium build and signature documentation](https://doc.libsodium.org
 The exact archive digest is a snapshot pin: changes to the upstream stable
 tarball deliberately fail until reviewed and repinned.
 
-Pending evidence: successful workflow execution. Even success proves only the
-upstream ARM64 source build and binary shape. It does not prove the React Native
+## Observed execution
+
+[Run 37964056713](https://github.com/Starforge-lab/finance-bro/actions/runs/37964056713)
+passed at source commit `8dc9ab2`. The log confirms the exact archive digest,
+Minisign archive/comment verification, source compilation, all three required
+exports, and three ELF LOAD alignments of 16,384 bytes. The downloaded library
+matches SHA-256 `297cd7ecd90f36101f1946da3d035b43e95063a08899186ef9d982e593e5374a`.
+The artifact also retains its ISC license and inspection reports.
+
+This proves only the upstream ARM64 source build and binary shape. It does not prove the React Native
 binding links against the generated library, SDK58 runtime compatibility,
 correct KDF/AEAD results on a phone, nonblocking UI, iOS/web parity, a complete
 F-Droid recipe, license-tree compliance or reproducibility. Those remain gates
