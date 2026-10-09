@@ -75,14 +75,14 @@ pnpm --dir apps/mobile dlx expo-doctor   # dependency/config health
 
 Planned: `pnpm parser:anonymise <file>`, which scrubs names, digits and VPAs from raw samples.
 
-Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com.rohangupta.financebro.dev` so a dev build and a store build can be installed side by side. `com.rohangupta.financebro` is a working id and **must be final before the first store upload**.
+Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com.rohangupta.financebro.dev` so a dev build and production build can be installed side by side. `com.rohangupta.financebro` is a working id and must be settled before the first F-Droid release. A shared application id across future channels is a goal; verify signing and version compatibility before promising cross-channel updates.
 
 ## Hard rules
 
 1. **Parser is pure.** `packages/sms-parser` has no React Native, Expo, DB or `Date.now()` imports. Time and locale are passed in. Same input → same output.
 2. **Money is safe integer paise** (`amountPaise: number`). Never floats. Format only at the UI edge. The parser rejects unsafe values and malformed precision/grouping; invalid transaction money stays in review without a candidate rather than falling through to a later fee. Invalid optional balances are omitted.
 3. **Never hand-edit `android/` or `ios/`.** They are generated (CNG). All native config goes through config plugins in `modules/*` or `app.config.ts`.
-4. **SMS is read-only.** We never send, delete, mark-read or modify SMS. We do not copy SMS bodies into our DB (see Privacy).
+4. **SMS and notification imports are read-only.** Never send, delete, mark-read or modify source messages. Never durably store raw SMS or notification text, including review and failure records (see Privacy).
 5. **No network calls with user data** without explicit, opt-in consent. No analytics/ads SDKs. Crash reporting, if added, is opt-in.
 6. **Every parser rule has at least one positive fixture**; CI fails otherwise. Every bug fix in parsing starts with a failing fixture.
 7. **Fixtures are anonymised** before commit — no real names, account digits, VPAs, phone numbers or reference numbers.
@@ -102,7 +102,7 @@ Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com
  → generic.keyword rule (extractors + direction keywords)
  → ParseResult:
      { kind: 'transaction', txn, ruleId, ruleVersion, confidence: 'high' | 'medium' }
-     { kind: 'review', candidate: txn | null, ruleId | null, ruleVersion | null }   → Review inbox
+     { kind: 'review', candidate: txn | null, ruleId | null, ruleVersion | null }   → privacy-safe Review state
      { kind: 'ignored', reason }
 ```
 
@@ -111,7 +111,7 @@ Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com
 - The generic rule returns `medium` only when the sender is a known institution (or the SMS has a UPI ref) **and** there is an anchor (last4 / VPA / ref). Otherwise it returns `low`, which becomes `review`.
 - `occurredAt` is the SMS arrival time; dates in the message body are not parsed yet.
 - Deterministic rules/regex only. **No AI/ML.** Avoid regex lookbehind; the same bundle must run in Hermes and in iOS JavaScriptCore.
-- Unknown-but-financial-looking messages go to a **Review inbox**, never silently dropped.
+- Unknown financial-looking SMS may retain extracted review fields, never the body; Android re-reads by platform id, with manual/paste recovery if the original is gone. iOS and notification failures retain only an aggregate count, with no durable per-failure candidate or payload; recovery is manual entry or paste.
 - `fixtures/synthetic/` holds made-up messages that exercise the classifier and generic rule. They are not real bank formats; real anonymised samples go under `fixtures/<type>/<institution>/`.
 
 ### Edge cases (owned by the parser / `matching/`)
@@ -124,7 +124,7 @@ Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com
 | Money mentioned by a person, not a bank | Low confidence → `review` |
 | Failed / declined | `status: 'failed'`, excluded from totals |
 | Refunds, reversals | `kind: 'refund' \| 'reversal'`, linked to the original via `linkedTxnId` (merchant + amount + window) |
-| Same SMS seen twice | Idempotent via `smsDedupeKey` (sender + body hash + 60 s bucket) |
+| Same SMS seen twice | The current pure-parser demo helper uses cyrb53 plus a 60 s bucket; persisted import fingerprints must instead be cryptographically keyed at the import/storage boundary (see Privacy). |
 | Same txn from bank + UPI app + card | `isSameTransaction`: equal UPI ref; else different institutions, same amount + direction + status, compatible last4, within ±10 min. Same-institution alerts are never merged. |
 | Own-account transfers, card bill payments | `isTransferPair`: debit and credit of the same amount between two of the user's own last4s within 2 h → `kind: 'transfer'`, excluded from spend. Wallet top-ups (often no last4) still need a rule. |
 | ATM withdrawal | `kind: 'cash_withdrawal'` |
@@ -136,28 +136,32 @@ Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com
 - Background parser execution is unproven on this New Architecture: #16 must establish a bounded runtime/SQLite path. Use WorkManager for best-effort catch-up with references only and app-open recovery. Notifications hide financial details by default; source text is never a notification payload.
 - **Catch-up on every app open:** query the SMS inbox in bounded batches from the last committed cursor. The initial history window defaults to 90 days only after explicit preview/consent. Recovery depends on permission and the original message remaining available; test process death, force-stop/reopen, installer allowlisting and OEM restrictions under #16. Advance the cursor atomically with ingestion; never queue bodies to disk.
 - Planned JS boundary: permission request and bounded inbox queries by source reference. Final event/catch-up methods depend on #16 and the shared ingestion contract in #43; no body queue or body-bearing durable event is selected.
+- Keep only the platform reference and minimal metadata. If Android can no longer reopen the original message, recover through manual entry or paste.
 
 ### iOS (`modules/transaction-intent`, Swift)
 
-- App Intent `LogTransactionFromSMS(text: String)`, `openAppWhenRun = false`, returns a confirmation dialog ("Logged ₹450 · Swiggy").
+- Planned App Intent `LogTransactionFromSMS(text: String)`, `openAppWhenRun = false`, returns a confirmation dialog ("Logged ₹450 · Swiggy").
 - Planned, pending #17: run the shared parser bundle in JavaScriptCore inside the App Intent, then write through the shared SQLite ingestion contract. Rohan must prove runtime availability, database access, concurrency and locked/background execution before this is treated as implemented.
 - The user creates a Shortcuts Message automation with supported filters and automatic running. Rohan must prove message-text input, actual trigger coverage and background/locked execution in #17; an unfiltered any-message trigger is not assumed. Apps cannot create personal automations programmatically. Provide illustrated setup and manual/paste/share recovery; this path has no general SMS inbox access or historical backfill.
+- Input text is transient. iOS and notification failures retain an aggregate count only, with manual/paste recovery and no per-failure payload.
 - Fallbacks: paste box, and clipboard detection on foreground. Share extension is v1.1.
 
-### Store distribution (Play Store + App Store, SMS may be denied)
+### Distribution (goal: main F-Droid)
 
-- **Google Play:** `READ_SMS` / `RECEIVE_SMS` are restricted permissions. Apps must be the default SMS handler or qualify for an exception ("SMS-based money management" has been one) via the Permissions Declaration Form + demo video. Approval is discretionary.
-- Therefore we build **two Android flavours from one codebase**, selected by an env var in `app.config.ts`:
-  - `play` — submitted with the SMS declaration. If denied, ship it with the SMS module's permissions stripped (config plugin flag) and rely on manual + paste + share-to-app.
-  - `sideload` — full SMS features, distributed as an APK (GitHub Releases). Onboarding explains Android's "Allow restricted settings" step for sideloaded apps. Watch Google's sideloading developer-verification rollout.
-- **App Store:** no SMS permission involved; App Intents + Shortcuts are standard. Privacy label targets "Data Not Collected".
-- Both stores need a privacy policy and data-safety disclosures; keep them consistent with the Privacy section below.
+Main F-Droid is the current distribution goal ([issue #27](https://github.com/Starforge-lab/finance-bro/issues/27)); Android and iOS import feasibility remains tracked separately in [#16](https://github.com/Starforge-lab/finance-bro/issues/16) and [#17](https://github.com/Starforge-lab/finance-bro/issues/17). This is a target, not an existing build or authorization to sign or publish.
+
+- F-Droid prerequisites: build from clean source without relying on EAS binaries, and audit the complete runtime and build dependency graph for free/open-source compatibility. Expo SDK 58's [`expo-notifications` Android build file](https://github.com/expo/expo/blob/main/packages/expo-notifications/android/build.gradle) includes Firebase Messaging; assess that dependency before adding the package.
+- Standard F-Droid signing is the initial target. Reproducibility and verified upstream signing are only needed if shared signatures across channels become a later requirement.
+- GitHub Releases and IzzyOnDroid are optional companion channels later. Google Play and the App Store are deferred possibilities; do not add `full`/`play` flavors until a concrete channel requirement justifies them. If Play is considered, SMS access needs policy approval and notification access needs a separate consent and feasibility review; notification imports have no inbox history, may expose redacted content, and failures recover by count plus manual entry or paste.
+- Keep privacy disclosures consistent with the Privacy section and [PRODUCT.md](PRODUCT.md).
 
 ### Privacy
 
 - All parsing on-device. No backend, no accounts, no bank linking.
-- **SMS bodies are not copied into our DB.** We store the parsed transaction plus metadata: platform message id, sender, body hash, `ruleId`, `ruleVersion`. On Android, re-parsing after a rule improvement re-reads from the system inbox by id.
-- Source text is transient even for unreadable imports. Android review retains only an inbox reference/minimal metadata and re-reads while permission/source exist; unavailable originals use manual/paste recovery. iOS/email/receipt review retains structured candidates or an unavailable count, never raw source content. Logs, durable queues, crash reports and backups follow the same boundary.
+- Never durably store raw SMS or notification text, including unparsed, review, or failed messages. The parser may hold text transiently in memory. Keep raw SMS/notification text out of queues, logs, telemetry, and crash reports.
+- Android may retain a platform message reference and minimal metadata (`sender`, `platformId`, `receivedAt`, rule, outcome) so review can re-read the original inbox message. If it is missing, the user recovers by manual entry or paste. iOS and notification failures retain an aggregate count only, with manual/paste recovery and no per-failure payload.
+- Persisted message fingerprints must be cryptographically keyed at the import/storage boundary using a random device secret in platform-protected storage. Decide and test key loss and restore behavior before imports ship. Keep secret handling out of `packages/sms-parser`; its current `smsDedupeKey` uses non-cryptographic cyrb53 and is demo logic, not a persisted security fingerprint.
+- Email/receipt source text is transient too; retain structured candidates or unavailable counts, never raw source content in durable review, logs or backups.
 - Biometric app lock and a hide-amounts toggle.
 - Backup (v1.1) is a user-initiated encrypted file export to a location they pick. Nothing is uploaded by the app.
 
@@ -198,10 +202,9 @@ The confirmed initial finance workflows include expenses/income, budgets and bil
 
 ## Known risks
 
-- SDK 58 beta / RN 0.88 RC: third-party lag (Drizzle expo-sqlite driver, Reanimated, `@expo/ui`), EAS image changes. Spike Headless JS (Android) and JSC-in-App-Intent (iOS) in week 1.
-- Play may deny SMS permissions → `play` flavour must stand on its own.
+- SDK 58 beta / RN 0.88 RC: third-party lag (Drizzle expo-sqlite driver, Reanimated, `@expo/ui`), EAS image changes. Headless JS and the iOS App Intent flow remain unverified.
 - Bank SMS formats change without notice → Review inbox + fixture-driven rules.
-- iOS: verify on a real device that messages filtered into "Transactions"/"Unknown Senders" still trigger the automation.
+- iOS: verify the complete Shortcuts-to-ledger flow on a real device in #17.
 
 ## Git
 
