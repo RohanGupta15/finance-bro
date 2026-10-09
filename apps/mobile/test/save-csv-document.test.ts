@@ -36,6 +36,12 @@ describe('saveCsvToDocument', () => {
       saveCsvToDocument({ resultCode: resultCodes.Success }, 'csv', resultCodes, documentForUri),
       /did not return a destination/,
     );
+    for (const data of ['Intent { dat=content://provider/document/csv flg=0x43 }', 'file:///tmp/csv', 'content://']) {
+      await assert.rejects(
+        saveCsvToDocument({ resultCode: resultCodes.Success, data }, 'csv', resultCodes, documentForUri),
+        /did not return a destination/,
+      );
+    }
     assert.equal(fileCreated, false);
   });
 

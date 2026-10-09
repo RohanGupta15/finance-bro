@@ -11,7 +11,7 @@ export async function saveCsvToDocument(
   documentForUri: (uri: string) => CsvDocument,
 ): Promise<'saved' | 'cancelled'> {
   if (result.resultCode === resultCodes.Canceled) return 'cancelled';
-  if (result.resultCode !== resultCodes.Success || !result.data) {
+  if (result.resultCode !== resultCodes.Success || !result.data || !/^content:\/\/[^/\s]+\/\S+$/.test(result.data)) {
     throw new Error('The system file picker did not return a destination.');
   }
 

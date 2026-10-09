@@ -9,6 +9,8 @@ on:
       - apps/mobile/app.config.ts
       - apps/mobile/package.json
       - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - patches/**
 
 permissions:
   contents: read
