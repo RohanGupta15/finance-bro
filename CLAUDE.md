@@ -186,6 +186,8 @@ Behaviour was originally inspired by [Sushi](https://github.com/jerameel/sushi) 
 
 ## Scope
 
+Follow [the manual-first roadmap](docs/mvp-roadmap.md) for delivery order and [PRODUCT.md](PRODUCT.md) for confirmed scope. Native import experiments do not block the usable manual-first MVP.
+
 The confirmed initial finance workflows include expenses/income, budgets and bills; see PRODUCT.md. Receipt scanning and connected email are confirmed later entry requirements; providers and their fit with the local-only design remain open. The shared local business layer exists; connected screens are under verification. PRODUCT.md and roadmap issue #7 define the approved manual-first v1. The older automatic-import roadmap below is future work, not a v1 release gate.
 
 - **v1 (manual-first MVP):** validated manual expenses/income; local accounts/categories; month feed, recorded cash-flow totals and category breakdown; protected edits and soft deletion; transient paste-to-review import with keyed deduplication and explicit key-loss recovery; monthly category budgets; due/paid bill records; user-initiated CSV export. Shared Expo SQLite contract on Android/iOS/web. No automatic inbox import, forecast or bank balance claim. Rohan owns iOS implementation and device checks.
