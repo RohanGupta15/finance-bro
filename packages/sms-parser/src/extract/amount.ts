@@ -1,5 +1,5 @@
 // Runs on normalised text, where every currency marker is "INR ".
-const AMOUNT = /INR ([\d,]+(?:\.\d{1,2})?)/g;
+const AMOUNT = /INR ([\d,]+(?:\.\d+)*(?:[eE][+-]?\d+)?)/g;
 
 /** Words that mean the amount right after them is not the transaction amount. */
 const NON_TXN_CONTEXT = /\b(?:bal|balance|lmt|limit|avl|available|outstanding|due)\b[^\d]{0,25}$/i;
@@ -7,8 +7,8 @@ const BALANCE_CONTEXT = /\b(?:bal|balance)\b[^\d]{0,25}$/i;
 
 /** "1,23,456.5" → 12345650. Returns null for malformed or unsafe integer paise. */
 export function toPaise(amount: string): number | null {
+  if (!/^(?:\d+|\d{1,3}(?:,\d{3})+|\d{1,2}(?:,\d{2})*,\d{3})(?:\.\d{1,2})?$/.test(amount)) return null;
   const clean = amount.replace(/,/g, '');
-  if (!/^\d+(?:\.\d{1,2})?$/.test(clean)) return null;
   const [rupees, paise = ''] = clean.split('.');
   const value = Number(rupees) * 100 + Number(paise.padEnd(2, '0'));
   return Number.isSafeInteger(value) ? value : null;
@@ -30,7 +30,7 @@ function mentions(text: string): AmountMention[] {
 
 /** First amount that isn't a balance/limit/due figure. */
 export function extractTxnAmount(text: string): number | null {
-  // An unsafe first transaction amount must not fall through to a later fee.
+  // Invalid transaction money must not fall through to a later fee.
   const hit = mentions(text).find((m) => (m.paise === null || m.paise > 0) && !NON_TXN_CONTEXT.test(m.before));
   return hit?.paise ?? null;
 }
