@@ -14,27 +14,28 @@ export type PastePreparation =
       identity: { id: string; dedupeKey: string; bodyHash: string };
       fingerprintKeyId: string;
       duplicateReviewRequired: boolean;
+      collision: { occurredAt: number; deleted: boolean } | null;
     };
 
 export type ReviewCorrections = TransactionPatch;
 
 export type PasteSaveResult = 'inserted' | 'duplicate';
 
+async function keyedFingerprint(value: unknown[], fingerprinter: Fingerprinter): Promise<string> {
+  const result = await fingerprinter.fingerprint(JSON.stringify(value));
+  if (!/^[a-f0-9]{64}$/.test(result)) throw new TypeError('Invalid keyed fingerprint');
+  return result;
+}
+
 export async function preparePastedSms(raw: RawSms, fingerprinter: Fingerprinter): Promise<PastePreparation> {
   const result = parseSms(raw);
   if (result.kind === 'ignored') return { kind: 'ignored', reason: result.reason };
 
   const candidate = result.kind === 'transaction' ? result.txn : result.candidate;
-  const fingerprint = async (value: unknown[]) => {
-    const result = await fingerprinter.fingerprint(JSON.stringify(value));
-    if (!/^[a-f0-9]{64}$/.test(result)) throw new TypeError('Invalid keyed fingerprint');
-    return result;
-  };
-  const bodyHash = await fingerprint(['body', raw.body]);
-  // ponytail: identical no-ref pastes share an ID; add a user-selected time disambiguator for repeated identical payments.
+  const bodyHash = await keyedFingerprint(['body', raw.body], fingerprinter);
   const identityKey = candidate?.upiRef
-    ? `upi:${await fingerprint(['upi', candidate.upiRef, candidate.direction, candidate.status, candidate.kind])}`
-    : `body:${await fingerprint(['sms', raw.sender.trim().toUpperCase(), raw.body])}`;
+    ? `upi:${await keyedFingerprint(['upi', candidate.upiRef, candidate.direction, candidate.status, candidate.kind], fingerprinter)}`
+    : `body:${await keyedFingerprint(['sms', raw.sender.trim().toUpperCase(), raw.body], fingerprinter)}`;
 
   return {
     kind: 'needs-review',
@@ -44,6 +45,7 @@ export async function preparePastedSms(raw: RawSms, fingerprinter: Fingerprinter
     identity: { id: `paste:${identityKey}`, dedupeKey: identityKey, bodyHash },
     fingerprintKeyId: fingerprinter.keyId,
     duplicateReviewRequired: false,
+    collision: null,
   };
 }
 
@@ -51,7 +53,8 @@ export async function saveReviewedPaste(
   ledger: Ledger,
   prepared: PastePreparation,
   corrections: ReviewCorrections = {},
-  options: { acknowledgeDuplicateRisk?: boolean } = {},
+  options: { acknowledgeDuplicateRisk?: boolean; separatePaymentAt?: Date } = {},
+  fingerprinter?: Fingerprinter,
 ): Promise<PasteSaveResult> {
   if (prepared.kind !== 'needs-review') throw new TypeError('Ignored SMS cannot be saved');
   if (!/^[a-f0-9]{64}$/.test(prepared.identity.bodyHash) ||
@@ -61,6 +64,32 @@ export async function saveReviewedPaste(
   }
   if (await requiresDuplicateReview(ledger, prepared.fingerprintKeyId) && options.acknowledgeDuplicateRisk !== true) {
     throw new DuplicateReviewRequiredError();
+  }
+  let identity = prepared.identity;
+  const separatePaymentAt = options.separatePaymentAt;
+  if (separatePaymentAt !== undefined) {
+    if (!prepared.identity.dedupeKey.startsWith('body:') || prepared.candidate?.upiRef || corrections.upiRef?.trim()) {
+      throw new TypeError('Only a no-reference paste collision can be separated by time');
+    }
+    if (!(separatePaymentAt instanceof Date) || !Number.isFinite(separatePaymentAt.getTime()) || separatePaymentAt.getTime() % 1_000 !== 0) {
+      throw new TypeError('Separate payment time must be a valid whole second');
+    }
+    const existing = await ledger.findPasteCollision(prepared.identity.id);
+    if (!existing) throw new TypeError('A separate payment requires a matching paste collision');
+    if (Math.floor(existing.occurredAt.getTime() / 1_000) === Math.floor(separatePaymentAt.getTime() / 1_000)) {
+      throw new RangeError('Choose a different actual time; payments in the same second must be entered manually');
+    }
+    if (corrections.occurredAt !== undefined && corrections.occurredAt.getTime() !== separatePaymentAt.getTime()) {
+      throw new TypeError('The saved occurrence time must match the selected separate payment time');
+    }
+    if (!fingerprinter || fingerprinter.keyId !== prepared.fingerprintKeyId) {
+      throw new DuplicateReviewRequiredError();
+    }
+    const disambiguator = await keyedFingerprint(
+      ['body-occurrence-v1', prepared.identity.dedupeKey, Math.floor(separatePaymentAt.getTime() / 1_000)],
+      fingerprinter,
+    );
+    identity = { id: `paste:body:${disambiguator}`, dedupeKey: `body:${disambiguator}`, bodyHash: prepared.identity.bodyHash };
   }
   const candidate = prepared.candidate;
   if (!candidate) {
@@ -75,20 +104,20 @@ export async function saveReviewedPaste(
   const direction = value('direction', candidate?.direction);
   const kind = value('kind', candidate?.kind);
   const status = value('status', candidate?.status);
-  const occurredAt = value('occurredAt', candidate ? new Date(candidate.occurredAt) : undefined);
+  const occurredAt = value('occurredAt', separatePaymentAt ?? (candidate ? new Date(candidate.occurredAt) : undefined));
   if (amountPaise === undefined || direction === undefined || kind === undefined || status === undefined || occurredAt === undefined) {
     throw new TypeError('A complete reviewed transaction is required');
   }
 
   const insert: ReviewedPasteTransaction = {
-    id: prepared.identity.id,
+    id: identity.id,
     amountPaise,
     direction,
     kind,
     status,
     occurredAt,
-    dedupeKey: prepared.identity.dedupeKey,
-    bodyHash: prepared.identity.bodyHash,
+    dedupeKey: identity.dedupeKey,
+    bodyHash: identity.bodyHash,
     ruleId: prepared.ruleId,
     ruleVersion: prepared.ruleVersion,
     accountId: value('accountId', null),
