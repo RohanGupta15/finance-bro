@@ -80,7 +80,7 @@ Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com
 ## Hard rules
 
 1. **Parser is pure.** `packages/sms-parser` has no React Native, Expo, DB or `Date.now()` imports. Time and locale are passed in. Same input → same output.
-2. **Money is integer paise** (`amountPaise: number`). Never floats. Format only at the UI edge.
+2. **Money is safe integer paise** (`amountPaise: number`). Never floats. Format only at the UI edge. The parser rejects unsafe values and malformed precision/grouping; invalid transaction money stays in review without a candidate rather than falling through to a later fee. Invalid optional balances are omitted.
 3. **Never hand-edit `android/` or `ios/`.** They are generated (CNG). All native config goes through config plugins in `modules/*` or `app.config.ts`.
 4. **SMS is read-only.** We never send, delete, mark-read or modify SMS. We do not copy SMS bodies into our DB (see Privacy).
 5. **No network calls with user data** without explicit, opt-in consent. No analytics/ads SDKs. Crash reporting, if added, is opt-in.
@@ -183,6 +183,8 @@ Behaviour was originally inspired by [Sushi](https://github.com/jerameel/sushi) 
 - Where we go further: auto-logged entries with one-tap category fix, number-pad-first manual add (~3 s), a Review inbox, and insights that state facts ("Food is 32% higher than last month") rather than chart walls.
 
 ## Scope
+
+Follow [the manual-first roadmap](docs/mvp-roadmap.md) for delivery order and [PRODUCT.md](PRODUCT.md) for confirmed scope. Native import experiments do not block the usable manual-first MVP.
 
 The confirmed initial finance workflows include expenses/income, budgets and bills; see PRODUCT.md. Receipt scanning and connected email are confirmed later entry requirements; providers and their fit with the local-only design remain open. The shared local business layer exists; connected screens are under verification. PRODUCT.md and roadmap issue #7 define the approved manual-first v1. The older automatic-import roadmap below is future work, not a v1 release gate.
 

@@ -2,7 +2,7 @@
 
 Do not include financial records, account details, message or email contents, receipts, credentials, or other sensitive data in public issues or pull requests.
 
-Check the repository's **Security** tab for a **Report a vulnerability** option and use it if available. Private vulnerability reporting has not been confirmed as enabled, and no separate security contact or response timeline is published. If private reporting is unavailable, do not post vulnerability details publicly; contact a maintainer through GitHub and ask for a private reporting route.
+Private vulnerability reporting is enabled. Use **Security → Report a vulnerability** to submit a report privately; do not post vulnerability details in public issues or pull requests. Secret scanning and push protection, Dependabot alerts, and Dependabot security updates are also enabled (verified 2026-10-06).
 
 ## Known development-tooling advisories
 

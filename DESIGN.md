@@ -263,7 +263,7 @@ Soft-cornered paper with drawn edges. Cards are 18px, hero cards 22px, controls 
 - Rows with a 10px stamp dot or a 44px date tile on the left, a Row Title, a Note beneath, and the amount in Space Mono on the right. 1.5px rules between rows, none after the last.
 
 ### Navigation
-- A floating capsule 64px tall, 16px from the sides, 24px above the bottom, four tabs (Home, Budgets, Insights, Settings) with 22px stroked icons and 11px labels. The selected tab sits on a round tint (`rgba(23,24,29,0.09)` light, `rgba(10,10,14,0.42)` dark) with an 800-weight label. The app retains NativeTabs on iOS and web; Android uses Router tabs to match the floating capsule because the native Material bar cannot float. Hide the Android capsule during entry/paste. iOS requires Rohan’s device verification.
+- A floating capsule 64px tall, 16px from the sides, 24px above the bottom, four tabs (Home, Budgets, Insights, Settings) with 22px stroked icons and 11px labels. The selected tab sits on a round tint (`rgba(23,24,29,0.09)` light, `rgba(10,10,14,0.42)` dark) with an 800-weight label. The app retains NativeTabs on iOS and web; Android uses Router tabs to match the floating capsule because the native Material bar cannot float. Hide the Android capsule during entry/paste. On web, reserve tab-bar clearance below manual-entry actions so both buttons stay above the floating capsule. iOS requires Rohan’s device verification.
 
 ### Pulled Cards (signature)
 - 148×194 cards fanned in a stack on Home, rotated, each with a stamp dot, merchant, time and amount. The newest is larger (166×216), lifted, and carries a rotated "New" stamp. They deal in with a 640ms expo-out arc.

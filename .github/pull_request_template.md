@@ -16,4 +16,4 @@ Checks not run:
 
 For visible UI changes, include screenshots with fictional data only.
 
-See [the branch strategy](https://github.com/RohanGupta15/finance-bro/blob/dev/docs/branching.md) for the target branch and merge method.
+See [the branch strategy](https://github.com/Starforge-lab/finance-bro/blob/dev/docs/branching.md) for the target branch and merge method.
