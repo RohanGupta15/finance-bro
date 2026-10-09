@@ -71,7 +71,7 @@ Existing #3 remains the compatibility/advisory owner task; #4/#35/#36 remain Roh
 
 ## Current PR readiness — 2026-10-09
 
-This is the reviewed batch, not continuous monitoring. Source review used separate Standards and Spec agents; the primary reviewer inspected the findings and exact heads. The repository has no `docs/agents/issue-tracker.md`; the supplied GitHub/gh workflow and PR descriptions served as the spec source.
+This snapshot records the delivery review; inspect live heads and checks before merging. The initial source review used separate Standards and Spec agents; the primary reviewer inspected the findings and exact heads. The repository has no `docs/agents/issue-tracker.md`; the supplied GitHub/gh workflow and PR descriptions served as the spec source.
 
 **Standards:** #18 is a focused attributes change. #20 changes development type definitions/lockfile, introduces no new runtime API and passes the Node 22 CI contract. #39 violates the integer-paise arithmetic rule in card-statement accumulation. #40 has no documented-standard blocker. #41 has numeric typography and reduced-motion discrepancies against DESIGN.md.
 
@@ -81,6 +81,14 @@ This is the reviewed batch, not continuous monitoring. Source review used separa
 - Requested changes on #39 (`a1c2643`), #40 (`9ca6605`) and #41 (`675117b`). Fix before approval; Rohan owns the repair task. Green checks alone are insufficient.
 - #19/#24/#28/#32 are green documentation PRs authored by the active `suvodeep12` account. Merge attempts were rejected for required Rohan code-owner approval and stale-base validation after #18. Rohan review was requested. Refresh against `dev` and pass CI after review; no protection bypass or identity substitution.
 - #21/#22/#23 remain incompatible upgrades with failed required validation and existing changes-requested reviews; preserve them as proposals pending #3 compatibility evidence.
+
+### Delivery follow-up
+
+- #39 is repaired at `43579a2`: signed card statements, settlement legs and bills remain in integer paise, with exact fractional-value regressions. Frozen install, 39 mobile/31 parser tests, SDK check, Doctor 20/20, all-platform exports and current-head CI/CodeQL passed. Source approval was submitted, but GitHub still requires an independent latest-push approval because the reviewing account pushed the repair. No new browser/device check accompanied this fixture repair.
+- #19/#24/#28/#32 were refreshed against `dev` (`2737b65`); required CI and CodeQL passed at `4a7d7c9`/`744e6d1`/`211a1a8`/`1b08497`. All remain open for fresh peer approval. #59's sender-provenance and backup-key contradictions were aligned at `5148658`; its checks passed and review threads were resolved.
+- Closed #1/#2 after verifying foundation delivery, organization administration, active permanent-branch rules, required peer/CI gates, Dependabot alerts, secret scanning/push protection, private reporting and CodeQL. Closed #35 after confirming ink credit tokens and neutral Finance Bro metadata on current `dev`; platform validation remains in #34/#36.
+- [#60](https://github.com/Starforge-lab/finance-bro/issues/60), implemented in [#62](https://github.com/Starforge-lab/finance-bro/pull/62) (`3d0509e`), rejects unsafe parser money before a candidate reaches imports. Four failing regressions preceded the fix; 38 parser tests, project checks, Doctor, exports and current-head CI/CodeQL pass. Peer approval is pending. [#61](https://github.com/Starforge-lab/finance-bro/issues/61) tracks explicit resolution of two genuine identical no-reference purchases under #12/#43/#56.
+- Device checks remain mandatory: no ADB device was connected during this follow-up, and no iPhone evidence was added. Recovery #42 and the remaining platform/provider gates keep 2.0 incomplete. Preserve existing primary-checkout edits; work proceeds in isolated branches/worktrees.
 
 Worst finding per axis: Standards — integer-paise arithmetic contract (#39); Spec — unfulfilled reduced-motion behavior (#41). No new UI/device test was performed by this review. It does not certify v1 or 2.0 release readiness.
 
