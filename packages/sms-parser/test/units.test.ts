@@ -9,11 +9,22 @@ describe('toPaise', () => {
     ['1,23,456.5', 12345650],
     ['0.05', 5],
     ['12.34', 1234],
+    ['90071992547409.91', Number.MAX_SAFE_INTEGER],
+    ['1,234,567.89', 123456789],
   ])('%s → %i', (input, paise) => expect(toPaise(input)).toBe(paise));
 
   it('rejects malformed amounts', () => {
     expect(toPaise('12.345')).toBeNull();
     expect(toPaise('')).toBeNull();
+    expect(toPaise('1,2')).toBeNull();
+    expect(toPaise('1,,234')).toBeNull();
+    expect(toPaise('1,2345')).toBeNull();
+    expect(toPaise('12,345,67')).toBeNull();
+  });
+
+  it('rejects amounts outside safe integer paise', () => {
+    expect(toPaise('90071992547409.92')).toBeNull();
+    expect(toPaise('999999999999999999999999999999999999')).toBeNull();
   });
 });
 
