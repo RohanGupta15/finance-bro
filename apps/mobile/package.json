@@ -36,7 +36,7 @@
     "react-native-worklets": "0.13.0"
   },
   "devDependencies": {
-    "@types/node": "24.19.1",
+    "@types/node": "26.6.4",
     "@types/react": "~19.3.0",
     "babel-plugin-inline-import": "3.0.0",
     "drizzle-kit": "0.31.11",
