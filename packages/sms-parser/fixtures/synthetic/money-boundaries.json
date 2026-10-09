@@ -1,0 +1,40 @@
+{
+  "note": "Fictional boundary alerts for exact safe integer paise; not real bank formats.",
+  "cases": [
+    {
+      "name": "Largest exact paise transaction",
+      "sender": "VM-HDFCBK-S",
+      "body": "INR 90071992547409.91 debited from A/c XX1234",
+      "receivedAt": "2026-10-09T12:00:00+05:30",
+      "expected": { "kind": "transaction", "ruleId": "generic.keyword", "txn": { "amountPaise": 9007199254740991 } }
+    },
+    {
+      "name": "Unsafe transaction stays in review",
+      "sender": "VM-HDFCBK-S",
+      "body": "INR 90071992547409.92 debited from A/c XX1234",
+      "receivedAt": "2026-10-09T12:00:00+05:30",
+      "expected": { "kind": "review", "ruleId": null }
+    },
+    {
+      "name": "Smaller later amount cannot replace unsafe transaction",
+      "sender": "VM-HDFCBK-S",
+      "body": "INR 90071992547409.92 debited from A/c XX1234. Fee INR 10",
+      "receivedAt": "2026-10-09T12:00:00+05:30",
+      "expected": { "kind": "review", "ruleId": null }
+    },
+    {
+      "name": "Unsafe balance does not poison valid transaction money",
+      "sender": "VM-HDFCBK-S",
+      "body": "INR 450 debited from A/c XX1234. Avl Bal INR 90071992547409.92",
+      "receivedAt": "2026-10-09T12:00:00+05:30",
+      "expected": { "kind": "transaction", "ruleId": "generic.keyword", "txn": { "amountPaise": 45000, "balancePaise": null } }
+    },
+    {
+      "name": "Oversized OTP remains ignored",
+      "sender": "VM-HDFCBK-S",
+      "body": "123456 is your OTP for INR 90071992547409.92 on card XX1234",
+      "receivedAt": "2026-10-09T12:00:00+05:30",
+      "expected": { "kind": "ignored", "reason": "otp" }
+    }
+  ]
+}
