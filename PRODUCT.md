@@ -12,7 +12,7 @@ A pnpm 12.9.1 and Turborepo monorepo with an Expo SDK 58 beta, React Native 0.88
 
 ## Users
 
-Primarily for Suvo's personal finances, with friends as additional users. Suvo and Rohan maintain the repository together. Whether financial records are shared between users remains undecided. A public open-source release is a possibility, but no license has been chosen.
+Primarily for Suvo's personal finances, with friends as additional users. Suvo and Rohan maintain the repository together. Version 2.0 keeps records private to each local ledger. Apache-2.0 and main F-Droid are confirmed distribution choices; LICENSE adoption remains in pending PR #28, and source-build eligibility/publication remain unproven.
 
 ## Product Purpose
 
@@ -26,14 +26,16 @@ Mobile use is primary, with Android, iOS, and web support. Suvo can test on a Mo
 
 ## Capabilities and Constraints
 
+Suvo approved [the 2.0 roadmap](docs/v2-roadmap.md) on 2026-10-09: automatic Android SMS capture and a device-proven iOS Shortcuts/App Intent path, correction-safe imports, encrypted recovery, reconciliation, recurring planning, explainable safe-to-spend/forecasts, offline receipt OCR, consented direct Gmail import and private native shortcuts/widgets. These are planned capabilities with explicit platform/provider/device release gates, not current features. Suvo owns shared data, Android/web and integration; Rohan owns all iOS work and design.
+
 - Confirmed initial scope: expenses and income, budgets, and bills. Manual entry, receipt scanning, automatic Android SMS parsing, and connected email parsing are confirmed entry requirements. Budget and bill workflows remain in scope even though the preserved Rohan proposal schedules them later.
 - Confirmed desired outcomes, not yet implemented: an easy-to-understand financial overview, identification of overspending, and month-end money estimates. The current direction is to show both projected total available account balance and money left from this month's income, clearly distinguished. The overspending baseline, calculation rules and required inputs remain to be agreed; do not assume complete account balances or income/bill schedules are available.
 - Current implementation: connected Home, manual-entry/edit/delete, paste review/save, Budgets/Bills, Insights and Settings screens use the shared local data API. Account/category management and CSV destinations are connected. New entries require only an amount; date defaults to today and category/account/note stay behind Add details. More controls, the full entry list, deeper insights and calculation explanations are collapsed by default. Native SMS capture, receipt OCR, email and encrypted backup remain future work. A connected screen is not evidence that every platform flow passes; see [UI validation](docs/v1-ui.md) and [the v1 data contract](docs/v1-data-layer.md).
-- Current architecture direction: local-only financial data with no app accounts or hosted backend. Storage, export, backup, and retention details need implementation. The email provider, requested permissions, and a local-only connection flow are undecided.
+- Current architecture direction: local-only financial data with no app accounts or hosted backend. Version 2.0 selects direct native Gmail OAuth/PKCE with gmail.readonly and transient local parsing, gated on provider verification and platform feasibility; connection requires separate explicit user consent. Encrypted backup/restore and automatic-source retention/recovery contracts are specified in the roadmap and remain unimplemented.
 - One upstream Worklets peer-range warning remains under review, tracked in [issue #3](https://github.com/RohanGupta15/finance-bro/issues/3), despite the Expo install check and Expo Doctor passing.
-- Android SMS access needs native integration and user consent. iOS does not let apps read a user's general SMS inbox; an iOS import path is undecided. Google Play SMS permission policy is relevant only if distributing through Google Play. Store setup is deferred. See [Google Play SMS and Call Log permissions](https://support.google.com/googleplay/android-developer/answer/10208820) and [Apple SMS filtering](https://developer.apple.com/documentation/identitylookup/sms-and-mms-message-filtering).
-- Receipt OCR approach and provider choices for connected email remain undecided. Financial data is sensitive; examples and fixtures must be fictional or anonymized.
-- Product name and open-source license are undecided.
+- Android SMS access requires native integration, source-specific consent and installer/real-device proof. iOS selects user-created Shortcuts Message automation to App Intent, conditional on a real-iPhone proof of trigger filters, message-text input and background/locked execution. It offers no general inbox access or historical SMS backfill. Store setup remains separate; see [the primary-source platform research](docs/research/2026-10-09-v2-platform-feasibility.md).
+- Receipt OCR selects source-buildable bundled Tesseract on Android and native Apple Vision on iOS; model/binding/license and measured accuracy gates precede implementation. Review all OCR money before save. SMS/email/receipt source content is transient, never durable review content or logs; financial examples remain fictional/anonymized.
+- Finance Bro remains the working product name. Apache-2.0 is the selected license; adoption is tracked by PR #28.
 
 ## Evidence on Hand
 
@@ -43,7 +45,7 @@ On 2026-10-08, the connected Motorola Edge 60 Pro running Android 17 rendered th
 
 ## Product Principles
 
-- Deliver future-tech, bleeding-edge functionality by excelling at speed, offline reliability and privacy within the approved manual-first v1 scope. Preserve exact money handling, protected corrections, clear persistence/error states and low-effort understanding. Use the newest compatible tooling; additional advanced capabilities require a confirmed user problem and scope decision.
+- Deliver bleeding-edge functionality through reliable on-device automation, recovery and explainable financial understanding in the approved 2.0 roadmap. Preserve the manual-first core, exact money, protected corrections, clear failure states and low-effort understanding. Use the newest compatible tooling and verify platform behavior before capability claims.
 - Approved visual baseline: Rohan's Ink and Stamps system in [PR #33](https://github.com/Starforge-lab/finance-bro/pull/33). Follow Rohan's exact screen compositions, components, typography, colors and spacing. The 2026-10-07 correction rejects an independent reinterpretation; changes must preserve the reference design, with truthful manual-first data and the retired Quicksave branding removed. Build the future-tech feel through polished motion, purposeful haptics and fast feedback; respect reduced-motion preferences. Mockups guide the connected screens; fictional mockup numbers and unsupported projections must never become product claims.
 - Design for low energy and limited attention: the user explicitly requests minimal text, minimal overwhelm and minimal friction. First glance must explain the purpose. Prioritize open, understand spending, Add, amount, Save. Optional details and management controls stay behind a tap; retain validation and recoverable errors.
 - Explain overspending and estimates in plain language. Distinguish recorded facts from projections and make missing data or assumptions clear.

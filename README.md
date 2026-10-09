@@ -1,5 +1,7 @@
 # finance-bro
 
+Next: [the approved 2.0 roadmap](docs/v2-roadmap.md) covers automatic message imports, recovery and private financial understanding, with assigned GitHub tasks and explicit device/provider gates.
+
 **Working repository name; final product name is undecided.**
 
 [![CI](https://github.com/RohanGupta15/finance-bro/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/RohanGupta15/finance-bro/actions/workflows/ci.yml)

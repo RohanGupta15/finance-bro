@@ -133,15 +133,15 @@ Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com
 
 - Permissions `RECEIVE_SMS`, `READ_SMS`, `POST_NOTIFICATIONS` are added by the module's config plugin.
 - Manifest `BroadcastReceiver` for `SMS_RECEIVED` (works when the app is killed). It pre-filters cheaply on sender/keywords and enqueues the message reference.
-- A **Headless JS** task runs the TS parser immediately and posts a notification ("₹450 · Swiggy · Food — tap to change"). *Unproven on the New Architecture → spike first; fallback is draining the queue on app open.*
-- **Catch-up on every app open:** query the SMS inbox from the last processed platform message id. This recovers anything missed by OEM battery killers (Xiaomi/Oppo/Vivo) and is the same code path as the first-run backfill (last 90 days).
+- Background parser execution is unproven on this New Architecture: #16 must establish a bounded runtime/SQLite path. Use WorkManager for best-effort catch-up with references only and app-open recovery. Notifications hide financial details by default; source text is never a notification payload.
+- **Catch-up on every app open:** query the SMS inbox in bounded batches from the last committed cursor. The initial history window defaults to 90 days only after explicit preview/consent. Recovery depends on permission and the original message remaining available; test process death, force-stop/reopen, installer allowlisting and OEM restrictions under #16. Advance the cursor atomically with ingestion; never queue bodies to disk.
 - JS API: `requestPermission()`, `queryInbox({ sinceId, limit })`, `drainQueue()`, `onSms` event.
 
 ### iOS (`modules/transaction-intent`, Swift)
 
 - App Intent `LogTransactionFromSMS(text: String)`, `openAppWhenRun = false`, returns a confirmation dialog ("Logged ₹450 · Swiggy").
 - **Parsing runs inside the intent** using the same `sms-parser` compiled to a single JS bundle and executed in `JavaScriptCore`. One parser, both platforms. The intent writes to the app's SQLite DB.
-- User sets up **one** Shortcuts automation: "When I get **any** message → Log transaction from SMS → Run Immediately, Notify When Run off". Non-transactional messages are discarded on-device. Apps cannot create automations programmatically, so onboarding provides an illustrated step-by-step guide, a `shortcuts://` deep link, and a live "send yourself a test SMS" check.
+- The user creates a Shortcuts Message automation with supported filters and automatic running. Rohan must prove message-text input, actual trigger coverage and background/locked execution in #17; an unfiltered any-message trigger is not assumed. Apps cannot create personal automations programmatically. Provide illustrated setup and manual/paste/share recovery; this path has no general SMS inbox access or historical backfill.
 - Fallbacks: paste box, and clipboard detection on foreground. Share extension is v1.1.
 
 ### Store distribution (Play Store + App Store, SMS may be denied)
@@ -157,7 +157,7 @@ Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com
 
 - All parsing on-device. No backend, no accounts, no bank linking.
 - **SMS bodies are not copied into our DB.** We store the parsed transaction plus metadata: platform message id, sender, body hash, `ruleId`, `ruleVersion`. On Android, re-parsing after a rule improvement re-reads from the system inbox by id.
-- Exception: an **unparsed** message in the Review inbox keeps its body only until the user resolves or dismisses it, then the body is deleted.
+- Source text is transient even for unreadable imports. Android review retains only an inbox reference/minimal metadata and re-reads while permission/source exist; unavailable originals use manual/paste recovery. iOS/email/receipt review retains structured candidates or an unavailable count, never raw source content. Logs, durable queues, crash reports and backups follow the same boundary.
 - Biometric app lock and a hide-amounts toggle.
 - Backup (v1.1) is a user-initiated encrypted file export to a location they pick. Nothing is uploaded by the app.
 
@@ -166,7 +166,7 @@ Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com
 - `accounts`: id, name, institution, type (`bank|credit_card|wallet|upi_lite|cash`), last4, isOwn, archived
 - `transactions`: id, amountPaise, direction (`debit|credit`), kind (`expense|income|transfer|refund|reversal|cash_withdrawal`), status (`posted|failed|pending`), accountId, counterparty, merchantId, categoryId, occurredAt, note, source (`sms|manual|ios_intent|paste`), smsRefId, upiRef, dedupeKey, linkedTxnId, excludeFromStats, userEdited, createdAt, updatedAt, deletedAt
   - `userEdited = true` → never overwritten by re-parsing. `deletedAt` = soft delete (undo, and blocks re-import).
-- `sms_refs`: id, platformId, sender, bodyHash, receivedAt, parseStatus (`parsed|ignored|unknown|failed`), ruleId, ruleVersion, pendingBody (nullable, Review inbox only)
+- Planned `sms_refs`: id, platformId, sender, keyed body fingerprint, receivedAt, parseStatus (`parsed|ignored|unknown|failed`), ruleId, ruleVersion. Store no raw body; coordinate future schema under the 2.0 ingestion issue.
 - `categories`: id, name, icon, color, parentId, kind (`expense|income`), isSystem, sortOrder
 - `merchants`: id, displayName, aliases, vpaPatterns, defaultCategoryId
 - `category_overrides`: matchType (`merchant|vpa|counterparty`), value, categoryId — learned from user re-categorisation
@@ -183,6 +183,8 @@ Behaviour was originally inspired by [Sushi](https://github.com/jerameel/sushi) 
 - Where we go further: auto-logged entries with one-tap category fix, number-pad-first manual add (~3 s), a Review inbox, and insights that state facts ("Food is 32% higher than last month") rather than chart walls.
 
 ## Scope
+
+For 2.0 implementation, import adapters, recovery or forecasts, follow [the approved 2.0 roadmap](docs/v2-roadmap.md) and its linked issues. It supersedes the older automatic-import plans below: source text stays transient, Android uses inbox catch-up, iOS automation requires #17 device proof, and provider/source-build gates remain explicit. Suvo owns shared contracts/Android/web; Rohan owns every iOS adapter and physical check. Planning grants no real-message access, account connection, signing or publication.
 
 The confirmed initial finance workflows include expenses/income, budgets and bills; see PRODUCT.md. Receipt scanning and connected email are confirmed later entry requirements; providers and their fit with the local-only design remain open. The shared local business layer exists; connected screens are under verification. PRODUCT.md and roadmap issue #7 define the approved manual-first v1. The older automatic-import roadmap below is future work, not a v1 release gate.
 
