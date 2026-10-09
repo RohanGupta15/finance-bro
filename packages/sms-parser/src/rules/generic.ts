@@ -17,7 +17,7 @@ const REVERSAL = /\brevers(?:ed|al)\b/i;
  */
 export const genericRule: Rule = {
   id: 'generic.keyword',
-  version: 1,
+  version: 3,
   match(sms) {
     const { text, senderInfo, receivedAt } = sms;
     const amountPaise = extractTxnAmount(text);

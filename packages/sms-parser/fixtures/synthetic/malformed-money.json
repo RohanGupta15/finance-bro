@@ -1,0 +1,40 @@
+{
+  "note": "Fictional malformed-money alerts; never truncate a transaction amount or repair its grouping silently.",
+  "cases": [
+    {
+      "name": "Extra decimal precision is not truncated",
+      "sender": "VM-HDFCBK-S",
+      "body": "INR 12.345 debited from A/c XX1234",
+      "receivedAt": "2026-10-09T12:00:00+05:30",
+      "expected": { "kind": "review", "ruleId": null }
+    },
+    {
+      "name": "Malformed grouping is not repaired",
+      "sender": "VM-HDFCBK-S",
+      "body": "INR 1,2 debited from A/c XX1234. Fee INR 10",
+      "receivedAt": "2026-10-09T12:00:00+05:30",
+      "expected": { "kind": "review", "ruleId": null }
+    },
+    {
+      "name": "Repeated decimal separators stay in review",
+      "sender": "VM-HDFCBK-S",
+      "body": "INR 12.34.56 debited from A/c XX1234",
+      "receivedAt": "2026-10-09T12:00:00+05:30",
+      "expected": { "kind": "review", "ruleId": null }
+    },
+    {
+      "name": "Scientific notation is not a rupee prefix",
+      "sender": "VM-HDFCBK-S",
+      "body": "INR 1e3 debited from A/c XX1234",
+      "receivedAt": "2026-10-09T12:00:00+05:30",
+      "expected": { "kind": "review", "ruleId": null }
+    },
+    {
+      "name": "Decimal amount followed by sentence punctuation remains valid",
+      "sender": "VM-HDFCBK-S",
+      "body": "A/c XX1234 debited INR 450.25. Avl Bal INR 1000.",
+      "receivedAt": "2026-10-09T12:00:00+05:30",
+      "expected": { "kind": "transaction", "ruleId": "generic.keyword", "txn": { "amountPaise": 45025, "balancePaise": 100000 } }
+    }
+  ]
+}
