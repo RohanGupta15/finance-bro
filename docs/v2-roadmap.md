@@ -10,23 +10,81 @@ The differentiator is trustworthy automation plus useful decisions on the device
 
 ## Settled choices
 
-| Area | Selected implementation | Boundary / completion evidence |
-| --- | --- | --- |
-| App and storage | Existing Expo monorepo, one Expo SQLite/Drizzle ledger contract on Android/iOS/web | Versioned migrations, integer paise and protected edits/tombstones; no second app, server or app account |
-| Distribution | Apache-2.0, main F-Droid first; iOS delivery owned by Rohan | Licensing decision is confirmed but LICENSE adoption is pending PR #28. Entire runtime/build graph and clean source build must pass #27; no claim of F-Droid acceptance |
-| Automatic Android messages | Native Kotlin SMS receiver + READ_SMS inbox catch-up, WorkManager for best-effort deferred work, catch-up on every app open | Opt-in history window defaults to 90 days after preview; source references/cursors survive, message bodies do not. Force-stop, OEM restrictions, inbox deletion and locked keys are explicit recovery cases |
-| Automatic iOS messages | User-created Shortcuts Message automation invoking a Swift App Intent; same parser bundle in JavaScriptCore | Future trigger-matching messages only. No general inbox access or historical SMS backfill. #17 must prove filters, broad-trigger feasibility, actual text input and locked execution on an iPhone before advertising automation |
-| Import safety | One coordinated ingestion API, keyed HMAC fingerprints and transactional source cursors | Stable source identity first; strong transaction evidence for cross-source matching. Weak identity/unknown account/amount ambiguity stays review. Auto-save only verified high-confidence rules after consent |
-| Merchant categorization | Explicit local correction rules + curated on-device catalog | User edits outrank rules. Save a future rule only with a deliberate action; parser stays deterministic |
-| Money understanding | Dated opening balances, reconciliation checkpoints, linked transfers/card settlements | Recorded cash flow is distinct from calculated or verified account balance; missing coverage suppresses totals that cannot be known |
-| Planning | Recurring expected income/bills, opt-in local due reminders, explicit budget rollover and savings allocations | Schedules are expectations, not posted transactions; actual payment links prevent double counting |
-| Forecast | Deterministic conservative safe-to-spend and scenario-based month-end estimate | Disclose inputs/history/date/reserve; separate liquid assets, liabilities and monthly income remainder; incomplete data stays visible |
-| Insights | Local, explainable spending-change, recurring-charge and shortfall detection | At most three actionable findings; each links to supporting entries. No cloud model or unsupported financial advice |
-| Recovery | Password-encrypted versioned archive using libsodium Argon2id + XChaCha20-Poly1305; validated temporary restore and atomic replacement | Binding/source-build compatibility gate before code; maintained audited crypto, no custom implementation. Wrong password, corruption or interruption preserves the old ledger. Password loss has no recovery service |
-| Receipt OCR | Bundled source-buildable Tesseract on Android; native Apple Vision adapter on iOS | Engine/binding/model license, accuracy, latency and size gate first. Always review extracted money; images/raw OCR are transient |
-| Connected email | Direct native Gmail OAuth with PKCE + gmail.readonly, local parsing and bounded sync | [#52](https://github.com/Starforge-lab/finance-bro/issues/52) must prove native-client/distribution feasibility and restricted-scope obligations. Provider setup is separate authorization; no proxy/server fallback or hidden mailbox-scope narrowing claim |
-| Native convenience | Privacy-redacted widgets, quick-add, share import, biometric app access lock | Widget/notification amounts hidden by default; UI app lock is not a claim of database-at-rest encryption |
-| Toolchain | Newest compatible Expo-managed versions, SDK-versioned docs and measured hardware behavior | Keep #3 advisories visible; failing compiler/lint/SDK upgrades do not qualify as bleeding-edge functionality |
+### App and storage
+
+- **Plan:** Existing Expo monorepo, one Expo SQLite/Drizzle ledger contract on Android/iOS/web
+- **Gate:** Versioned migrations, integer paise and protected edits/tombstones; no second app, server or app account
+
+### Distribution
+
+- **Plan:** Apache-2.0, main F-Droid first; iOS delivery owned by Rohan
+- **Gate:** Licensing decision is confirmed but LICENSE adoption is pending PR #28. Entire runtime/build graph and clean source build must pass #27; no claim of F-Droid acceptance
+
+### Automatic Android messages
+
+- **Plan:** Native Kotlin SMS receiver + READ_SMS inbox catch-up, WorkManager for best-effort deferred work, catch-up on every app open
+- **Gate:** Opt-in history window defaults to 90 days after preview; source references/cursors survive, message bodies do not. Force-stop, OEM restrictions, inbox deletion and locked keys are explicit recovery cases
+
+### Automatic iOS messages
+
+- **Plan:** User-created Shortcuts Message automation invoking a Swift App Intent; same parser bundle in JavaScriptCore
+- **Gate:** Future trigger-matching messages only. No general inbox access or historical SMS backfill. #17 must prove filters, broad-trigger feasibility, actual text input and locked execution on an iPhone before advertising automation
+
+### Import safety
+
+- **Plan:** One coordinated ingestion API, keyed HMAC fingerprints and transactional source cursors
+- **Gate:** Stable source identity first; strong transaction evidence for cross-source matching. Weak identity/unknown account/amount ambiguity stays review. Auto-save only verified high-confidence rules after consent
+
+### Merchant categorization
+
+- **Plan:** Explicit local correction rules + curated on-device catalog
+- **Gate:** User edits outrank rules. Save a future rule only with a deliberate action; parser stays deterministic
+
+### Money understanding
+
+- **Plan:** Dated opening balances, reconciliation checkpoints, linked transfers/card settlements
+- **Gate:** Recorded cash flow is distinct from calculated or verified account balance; missing coverage suppresses totals that cannot be known
+
+### Planning
+
+- **Plan:** Recurring expected income/bills, opt-in local due reminders, explicit budget rollover and savings allocations
+- **Gate:** Schedules are expectations, not posted transactions; actual payment links prevent double counting
+
+### Forecast
+
+- **Plan:** Deterministic conservative safe-to-spend and scenario-based month-end estimate
+- **Gate:** Disclose inputs/history/date/reserve; separate liquid assets, liabilities and monthly income remainder; incomplete data stays visible
+
+### Insights
+
+- **Plan:** Local, explainable spending-change, recurring-charge and shortfall detection
+- **Gate:** At most three actionable findings; each links to supporting entries. No cloud model or unsupported financial advice
+
+### Recovery
+
+- **Plan:** Password-encrypted versioned archive using libsodium Argon2id + XChaCha20-Poly1305; validated temporary restore and atomic replacement
+- **Gate:** Binding/source-build compatibility gate before code; maintained audited crypto, no custom implementation. Wrong password, corruption or interruption preserves the old ledger. Password loss has no recovery service
+
+### Receipt OCR
+
+- **Plan:** Bundled source-buildable Tesseract on Android; native Apple Vision adapter on iOS
+- **Gate:** Engine/binding/model license, accuracy, latency and size gate first. Always review extracted money; images/raw OCR are transient
+
+### Connected email
+
+- **Plan:** Direct native Gmail OAuth with PKCE + gmail.readonly, local parsing and bounded sync
+- **Gate:** [#52](https://github.com/Starforge-lab/finance-bro/issues/52) must prove native-client/distribution feasibility and restricted-scope obligations. Provider setup is separate authorization; no proxy/server fallback or hidden mailbox-scope narrowing claim
+
+### Native convenience
+
+- **Plan:** Privacy-redacted widgets, quick-add, share import, biometric app access lock
+- **Gate:** Widget/notification amounts hidden by default; UI app lock is not a claim of database-at-rest encryption
+
+### Toolchain
+
+- **Plan:** Newest compatible Expo-managed versions, SDK-versioned docs and measured hardware behavior
+- **Gate:** Keep #3 advisories visible; failing compiler/lint/SDK upgrades do not qualify as bleeding-edge functionality
+
 
 Notification-listener capture is excluded from the 2.0 critical path: it has broad access, redaction/truncation and no reliable historical backfill. No cloud sync, bank linking, social/shared finances, paid AI service or multi-currency accounting is added. These increase scope without solving the current India/INR workflow better.
 
@@ -45,12 +103,26 @@ Tracked in [2.0 epic #58](https://github.com/Starforge-lab/finance-bro/issues/58
 
 Suvo (`suvodeep12`) owns shared domain/data/parser work, Android, web and final integration. Rohan (`RohanGupta15`) owns **all iOS implementation, adapters and device checks**, plus the design contract and current UI review repairs. An issue's primary assignee is accountable for shared delivery; iOS subtasks remain Rohan's responsibility, recorded in each issue and consolidated in [#55](https://github.com/Starforge-lab/finance-bro/issues/55). Neither is assigned an artificial deadline.
 
-| Phase / milestone | Deliverables and dependencies | Exit gate |
-| --- | --- | --- |
-| 0 — Safety and recovery | Complete remaining manual-first acceptance (#8–#15), iOS baseline #34, encrypted recovery [#42](https://github.com/Starforge-lab/finance-bro/issues/42); fix UI review blockers | Migration/write/restore failures preserve data; verified fresh-install recovery. Manual flows usable without import permissions |
-| 1 — Automatic capture | Device feasibility #16/#17 → shared ingestion [#43](https://github.com/Starforge-lab/finance-bro/issues/43) → Android [#44](https://github.com/Starforge-lab/finance-bro/issues/44) / iOS [#45](https://github.com/Starforge-lab/finance-bro/issues/45); verified bank and merchant rules [#46](https://github.com/Starforge-lab/finance-bro/issues/46) | Consented real-device capture and replay matrix; visible misses/review; no raw-text retention, duplicates or lost corrections. No iOS automation claim without #17 evidence |
-| 2 — Financial understanding | Reconciliation [#47](https://github.com/Starforge-lab/finance-bro/issues/47) → recurring planning [#48](https://github.com/Starforge-lab/finance-bro/issues/48) → safe-to-spend/forecast [#49](https://github.com/Starforge-lab/finance-bro/issues/49) → actionable insights [#50](https://github.com/Starforge-lab/finance-bro/issues/50) | Exact money and recorded/projected separation; incomplete history and missing accounts handled truthfully; every insight traceable |
-| 3 — Complete product and release | Offline receipts [#51](https://github.com/Starforge-lab/finance-bro/issues/51); Gmail feasibility [#52](https://github.com/Starforge-lab/finance-bro/issues/52) → gated Gmail import [#53](https://github.com/Starforge-lab/finance-bro/issues/53); Android surfaces [#54](https://github.com/Starforge-lab/finance-bro/issues/54) / iOS integrations [#55](https://github.com/Starforge-lab/finance-bro/issues/55); F-Droid #27 and release matrix [#56](https://github.com/Starforge-lab/finance-bro/issues/56) | All mandatory feature/platform/provider gates pass at a recorded revision. A blocked iOS/email gate keeps 2.0 incomplete; signing and publication are separately authorized |
+### 0 — Safety and recovery
+
+- **Work:** Complete remaining manual-first acceptance (#8–#15), iOS baseline #34, encrypted recovery [#42](https://github.com/Starforge-lab/finance-bro/issues/42); fix UI review blockers
+- **Gate:** Migration/write/restore failures preserve data; verified fresh-install recovery. Manual flows usable without import permissions
+
+### 1 — Automatic capture
+
+- **Work:** Device feasibility #16/#17 → shared ingestion [#43](https://github.com/Starforge-lab/finance-bro/issues/43) → Android [#44](https://github.com/Starforge-lab/finance-bro/issues/44) / iOS [#45](https://github.com/Starforge-lab/finance-bro/issues/45); verified bank and merchant rules [#46](https://github.com/Starforge-lab/finance-bro/issues/46)
+- **Gate:** Consented real-device capture and replay matrix; visible misses/review; no raw-text retention, duplicates or lost corrections. No iOS automation claim without #17 evidence
+
+### 2 — Financial understanding
+
+- **Work:** Reconciliation [#47](https://github.com/Starforge-lab/finance-bro/issues/47) → recurring planning [#48](https://github.com/Starforge-lab/finance-bro/issues/48) → safe-to-spend/forecast [#49](https://github.com/Starforge-lab/finance-bro/issues/49) → actionable insights [#50](https://github.com/Starforge-lab/finance-bro/issues/50)
+- **Gate:** Exact money and recorded/projected separation; incomplete history and missing accounts handled truthfully; every insight traceable
+
+### 3 — Complete product and release
+
+- **Work:** Offline receipts [#51](https://github.com/Starforge-lab/finance-bro/issues/51); Gmail feasibility [#52](https://github.com/Starforge-lab/finance-bro/issues/52) → gated Gmail import [#53](https://github.com/Starforge-lab/finance-bro/issues/53); Android surfaces [#54](https://github.com/Starforge-lab/finance-bro/issues/54) / iOS integrations [#55](https://github.com/Starforge-lab/finance-bro/issues/55); F-Droid #27 and release matrix [#56](https://github.com/Starforge-lab/finance-bro/issues/56)
+- **Gate:** All mandatory feature/platform/provider gates pass at a recorded revision. A blocked iOS/email gate keeps 2.0 incomplete; signing and publication are separately authorized
+
 
 Start #16 (Suvo), #17/#34 (Rohan) and [#42](https://github.com/Starforge-lab/finance-bro/issues/42)'s format/crypto design in parallel. Shared schema changes have one owner and integrate sequentially. Android hardware experiments can use an isolated fictional database before all-platform recovery is complete; production automatic writes wait for the ingestion/recovery gates. iOS feasibility must produce an explicit input/output/concurrency contract before the shared automatic ingestion API is finalized.
 
