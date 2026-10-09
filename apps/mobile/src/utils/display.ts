@@ -18,6 +18,20 @@ export function indiaDate(date: Date = new Date()): string {
   return new Date(date.getTime() + indiaOffset).toISOString().slice(0, 10);
 }
 
+export function indiaTime(date: Date): string {
+  if (!(date instanceof Date) || !Number.isFinite(date.getTime())) throw new TypeError('Time is invalid');
+  return new Date(date.getTime() + indiaOffset).toISOString().slice(11, 19);
+}
+
+export function parseIndiaDateTime(dateText: string, timeText: string): Date {
+  if (!/^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(timeText)) {
+    throw new TypeError('Enter the time as HH:MM:SS');
+  }
+  const date = parseIndiaDate(dateText);
+  const [hours, minutes, seconds] = timeText.split(':').map(Number);
+  return new Date(date.getTime() + (hours! * 60 * 60 + minutes! * 60 + seconds!) * 1_000);
+}
+
 export function parseIndiaDate(input: string, preserveTimeFrom?: Date): Date {
   if (!/^(?!0000)\d{4}-\d{2}-\d{2}$/.test(input)) throw new TypeError('Enter a date as YYYY-MM-DD');
   const date = new Date(`${input}T00:00:00+05:30`);
