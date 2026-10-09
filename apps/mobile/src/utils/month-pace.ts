@@ -1,4 +1,4 @@
-import { indiaDate } from './display';
+import { indiaDate, money } from './display';
 
 /** The transaction fields the pace view reads; screens pass full ledger rows. */
 export type PaceRow = {
@@ -44,6 +44,18 @@ export type CategoryBar = {
   over: boolean;
 };
 
+/** Comparison copy for the flexible-spend sentence above the pace chart. */
+export function flexibleSpendSummary({ currentPaise, previousPaise, hasFixed, previousName, day }: {
+  currentPaise: number; previousPaise: number | null; hasFixed: boolean; previousName: string; day: number;
+}): string {
+  const label = hasFixed ? ' flexible' : '';
+  if (previousPaise === null) return money(currentPaise) + label + ' spent so far. No ' + previousName + ' history to compare.';
+  const difference = currentPaise - previousPaise;
+  const comparison = difference > 0 ? money(difference) + ' more than ' + previousName
+    : difference < 0 ? money(-difference) + ' less than ' + previousName
+      : 'the same amount as ' + previousName;
+  return money(currentPaise) + label + ' so far, ' + comparison + ' by day ' + day + '.';
+}
 /** Signed paise a row adds to spending, matching getMonthlySummary; 0 for rows that don't count. */
 export function spendingPaise(row: PaceRow): number {
   if (row.status !== 'posted' || row.excludeFromStats) return 0;
@@ -118,7 +130,7 @@ export function topCategoryBars({ spending, budgets, categories, count = 3 }: {
 }): CategoryBar[] {
   const budgetOf = (id: string | null) => budgets.find((budget) => budget.categoryId === id)?.amountPaise ?? null;
   const ranked = spending.filter((item) => item.expensePaise > 0).sort((left, right) => right.expensePaise - left.expensePaise);
-  const shown = ranked.length > count + 1 ? ranked.slice(0, count) : ranked;
+  const shown = ranked.length > count ? ranked.slice(0, count) : ranked;
   const rest = ranked.slice(shown.length);
   const bars = shown.map((item) => ({
     key: item.categoryId ?? 'uncategorized',
