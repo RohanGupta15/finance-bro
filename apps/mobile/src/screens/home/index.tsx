@@ -1,6 +1,6 @@
 import { useFocusEffect, useRootNavigationState, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type ComponentRef } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useColorScheme } from '@/hooks/appearance';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { Keyframe, useReducedMotion } from 'react-native-reanimated';
@@ -131,7 +131,7 @@ export function Home() {
           <ThemedText style={Type.screenTitle}>{selected.counterparty ?? selected.categoryName ?? 'Entry'}</ThemedText>
           <ThemedText style={Type.amountHero} adjustsFontSizeToFit numberOfLines={1}>{exactMoney(selected.amountPaise)}</ThemedText>
           <ThemedText style={Type.body}>{selected.direction} · {selected.kind} · {selected.status}</ThemedText>
-          <ThemedText style={Type.note}><ThemedText style={Type.amountSmall}>{indiaDate(selected.occurredAt)}</ThemedText> · {selected.source}{selected.userEdited && selected.source !== 'manual' ? ' · corrected' : ''}{selected.excludeFromStats ? ' · excluded from totals' : ''}</ThemedText>
+          <ThemedText style={Type.note}><Text style={{ fontFamily: Fonts.monoBold }}>{indiaDate(selected.occurredAt)}</Text> · {selected.source}{selected.userEdited && selected.source !== 'manual' ? ' · corrected' : ''}{selected.excludeFromStats ? ' · excluded from totals' : ''}</ThemedText>
           <ThemedText style={Type.body}>{selected.categoryName ?? 'Uncategorized'} · {selected.accountName ?? 'No account'}</ThemedText>
           {selected.note ? <ThemedText style={Type.body}>{selected.note}</ThemedText> : null}
           <LedgerButton label="Edit entry" disabled={deleting} onPress={() => setMode('entry')} />
@@ -156,7 +156,7 @@ export function Home() {
         {summary && !loading && !error ? <Animated.View key={`hero-${month}`} entering={fadeIn()} style={styles.hero}>
           <ThemedText style={styles.heroAmount} adjustsFontSizeToFit numberOfLines={1}>{money(summary.expensePaise)}</ThemedText>
           <ThemedText themeColor="textSecondary" style={Type.note}>
-            spent{budgetTotal ? ` of ${money(budgetTotal)}` : ''} · <ThemedText themeColor="textSecondary" style={Type.amountSmall}>{rows.length}</ThemedText> {rows.length === 1 ? 'entry' : 'entries'}
+            spent{budgetTotal ? ` of ${money(budgetTotal)}` : ''} · <Text style={{ fontFamily: Fonts.monoBold }}>{rows.length}</Text> {rows.length === 1 ? 'entry' : 'entries'}
           </ThemedText>
         </Animated.View> : null}
         {error ? <View style={styles.section}><ThemedText accessibilityRole="alert">{error}</ThemedText><LedgerButton label="Retry" onPress={() => setRevision((value) => value + 1)} /></View> : null}
@@ -223,7 +223,7 @@ export function Home() {
           <View style={styles.sectionRow}>
             <View style={styles.grow}>
               <ThemedText style={Type.sectionTitle} accessibilityRole="header">Entries</ThemedText>
-              <ThemedText themeColor="textSecondary" style={Type.label}>{activeFilters ? <><ThemedText themeColor="textSecondary" style={Type.amountSmall}>{visibleRows.length}</ThemedText> of <ThemedText themeColor="textSecondary" style={Type.amountSmall}>{rows.length}</ThemedText> · filtered</> : <><ThemedText themeColor="textSecondary" style={Type.amountSmall}>{rows.length}</ThemedText> this month</>}</ThemedText>
+              <ThemedText themeColor="textSecondary" style={Type.label}>{activeFilters ? <><Text style={{ fontFamily: Fonts.monoBold }}>{visibleRows.length}</Text> of <Text style={{ fontFamily: Fonts.monoBold }}>{rows.length}</Text> · filtered</> : <><Text style={{ fontFamily: Fonts.monoBold }}>{rows.length}</Text> this month</>}</ThemedText>
             </View>
             {activeFilters ? <LedgerButton label="Clear filters" icon="close" iconOnly onPress={() => { setCategoryId(undefined); setDirection(undefined); setAccountId(undefined); }} /> : null}
             <LedgerButton label={filters ? 'Hide filters' : 'Filter entries'} icon="filter" iconOnly selected={filters} expanded={filters} onPress={() => setFilters(!filters)} />
@@ -305,14 +305,14 @@ function entryIcon(row: Row): IconName {
 function SectionHeading({ title, count }: { title: string; count?: number }) {
   return <View style={styles.sectionRow}>
     <ThemedText style={[Type.sectionTitle, styles.grow]} accessibilityRole="header">{title}</ThemedText>
-    {count !== undefined ? <ThemedText themeColor="textSecondary" style={Type.label}><ThemedText themeColor="textSecondary" style={Type.amountSmall}>{count}</ThemedText> {count === 1 ? 'entry' : 'entries'}</ThemedText> : null}
+    {count !== undefined ? <ThemedText themeColor="textSecondary" style={Type.label}><Text style={{ fontFamily: Fonts.monoBold }}>{count}</Text> {count === 1 ? 'entry' : 'entries'}</ThemedText> : null}
   </View>;
 }
 
 function DayLabel({ label }: { label: string }) {
   const match = /^(\D*)(\d+)(.*)$/.exec(label);
   return <ThemedText themeColor="textSecondary" style={[Type.label, styles.groupLabel]} accessibilityRole="header">
-    {match ? <>{match[1]}<ThemedText themeColor="textSecondary" style={Type.amountSmall}>{match[2]}</ThemedText>{match[3]}</> : label}
+    {match ? <>{match[1]}<Text style={{ fontFamily: Fonts.monoBold }}>{match[2]}</Text>{match[3]}</> : label}
   </ThemedText>;
 }
 

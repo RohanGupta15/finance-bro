@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import Animated, { SlideInDown, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -38,19 +38,23 @@ export function Segmented<T extends string>({ options, value, onChange, label }:
   options: readonly { value: T; label: string; icon?: IconName }[]; value: T; onChange: (value: T) => void; label: string;
 }) {
   const colors = useTheme();
+  const reduceMotion = useReducedMotion();
   const [width, setWidth] = useState(0);
   const index = Math.max(0, options.findIndex((option) => option.value === value));
   const segment = width ? (width - 8) / options.length : 0;
   const x = useSharedValue(index * segment);
   useEffect(() => {
-    // withTiming jumps straight to the end when the system asks for reduced motion.
+    if (reduceMotion) return;
     x.value = withTiming(index * segment, { duration: Motion.standard, easing: ease });
-  }, [index, segment, x]);
+  }, [index, segment, reduceMotion, x]);
   const thumb = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
   return <View accessibilityRole="radiogroup" accessibilityLabel={label}
     onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
     style={[styles.segment, { borderColor: colors.border, backgroundColor: colors.backgroundElement }]}>
-    {segment ? <Animated.View style={[styles.thumb, { width: segment, backgroundColor: colors.fill }, thumb]} /> : null}
+    {segment ? reduceMotion
+      ? <Animated.View key={value} entering={fadeIn()} style={[styles.thumb, { width: segment, left: 2 + index * segment, backgroundColor: colors.fill }]} />
+      : <Animated.View style={[styles.thumb, { width: segment, backgroundColor: colors.fill }, thumb]} />
+      : null}
     {options.map((option) => {
       const on = option.value === value;
       const ink = on ? colors.background : colors.text;
@@ -111,7 +115,7 @@ export function MonthPicker({ month, onChange, variant = 'pill' }: {
     {trigger}
     <Modal visible={open} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setOpen(false)}>
       <Pressable accessibilityRole="button" accessibilityLabel="Close month list" style={[styles.backdrop, { backgroundColor: colors.scrim }]} onPress={() => setOpen(false)} />
-      <Animated.View entering={SlideInDown.duration(Motion.standard).easing(ease)}
+      <Animated.View entering={reduceMotion ? fadeIn() : SlideInDown.duration(Motion.standard).easing(ease)}
         style={[styles.sheet, { backgroundColor: colors.background, borderColor: colors.border, paddingBottom: insets.bottom + 16 }]}>
         <View style={[styles.grabber, { backgroundColor: colors.textMuted }]} />
         <View style={styles.sheetHeader}>
@@ -134,7 +138,7 @@ export function MonthPicker({ month, onChange, variant = 'pill' }: {
                 <View style={styles.monthWords}>
                   <ThemedText style={[Type.rowTitle, { color: selected ? colors.background : colors.text }]}><MonthLabel month={row.month} withYear={row.month.slice(0, 4) !== current.slice(0, 4)} color={selected ? colors.background : colors.text} /></ThemedText>
                   <ThemedText style={[Type.label, { color: selected ? colors.background : colors.textSecondary }]}>
-                    {row.month === current ? 'This month · ' : ''}<ThemedText style={[Type.amountSmall, { color: selected ? colors.background : colors.textSecondary }]}>{row.entryCount}</ThemedText> {row.entryCount === 1 ? 'entry' : 'entries'}
+                    {row.month === current ? 'This month · ' : ''}<Text style={{ fontFamily: Fonts.monoBold }}>{row.entryCount}</Text> {row.entryCount === 1 ? 'entry' : 'entries'}
                   </ThemedText>
                 </View>
                 <ThemedText style={[Type.amountSmall, { color: selected ? colors.background : colors.text }]}>{money(row.expensePaise)}</ThemedText>
@@ -152,7 +156,7 @@ function MonthLabel({ month, withYear, color }: { month: string; withYear: boole
   const label = monthName(month, withYear);
   const year = withYear ? label.match(/\d+/)?.[0] ?? '' : '';
   const index = year ? label.lastIndexOf(year) : -1;
-  return index < 0 ? label : <>{label.slice(0, index)}<ThemedText style={[Type.amountSmall, color ? { color } : undefined]}>{year}</ThemedText>{label.slice(index + year.length)}</>;
+  return index < 0 ? label : <>{label.slice(0, index)}<Text style={{ fontFamily: Fonts.monoBold, ...(color ? { color } : {}) }}>{year}</Text>{label.slice(index + year.length)}</>;
 }
 function MonthStepButton({ label, icon, disabled, onPress }: {
   label: string; icon: IconName; disabled: boolean; onPress: () => void;

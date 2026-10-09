@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
-import Animated, { Easing, useAnimatedProps, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedProps, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 
 import { ThemedText } from '@/components/themed-text';
@@ -9,7 +9,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { toggleCategoryFilter } from '@/utils/category-filter';
 import { flexibleSpendSummary, type CategoryBar, type MonthPace } from '@/utils/month-pace';
 import { money } from '@/utils/display';
-
+import { fadeIn } from '@/utils/motion';
 
 const HEIGHT = 132;
 const TOP = 14;
@@ -75,6 +75,7 @@ export function MonthPaceChart({ pace, bars, monthName, previousName, hasFixed, 
   selectedCategoryId: string | null | undefined; onSelectCategory: (categoryId: string | null | undefined) => void;
 }) {
   const colors = useTheme();
+  const reduceMotion = useReducedMotion();
   const [width, setWidth] = useState(0);
   const [day, setDay] = useState<number | null>(null);
   const top = niceCeiling(Math.max(1, ...pace.current, ...pace.previous));
@@ -100,7 +101,7 @@ export function MonthPaceChart({ pace, bars, monthName, previousName, hasFixed, 
 
   return <View style={styles.wrap}>
     <ThemedText accessibilityLiveRegion="polite" style={[Type.note, styles.readout]}>{readout}</ThemedText>
-    <View
+    <Animated.View entering={reduceMotion ? fadeIn() : undefined}
       onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
       accessible accessibilityRole="adjustable"
       accessibilityLabel={`${monthName} running spending compared with ${previousName}`}
@@ -137,19 +138,19 @@ export function MonthPaceChart({ pace, bars, monthName, previousName, hasFixed, 
           <Circle cx={x(day)} cy={y(pace.current[day - 1] ?? 0)} r={5} fill={colors.accent} stroke={colors.text} strokeWidth={2} />
         </> : null}
       </Svg> : null}
-    </View>
+    </Animated.View>
     <View style={styles.axis}>
-      <ThemedText style={[Type.amountSmall, { color: colors.textMuted }]}>1</ThemedText>
+      <ThemedText style={[Type.label, { fontFamily: Fonts.monoBold, color: colors.textMuted }]}>1</ThemedText>
       <View style={styles.legend}>
         <Svg width={18} height={6}><Line x1={1} x2={17} y1={3} y2={3} stroke={colors.text} strokeWidth={2.5} strokeLinecap="round" /></Svg>
         <ThemedText style={[Type.label, { color: colors.textSecondary }]}>{monthName}</ThemedText>
         <Svg width={18} height={6} style={styles.key}><Line x1={1} x2={17} y1={3} y2={3} stroke={colors.textSecondary} strokeWidth={1.5} strokeDasharray="4 4" /></Svg>
         <ThemedText style={[Type.label, { color: colors.textSecondary }]}>{previousName}</ThemedText>
       </View>
-      <ThemedText style={[Type.amountSmall, { color: colors.textMuted }]}>{pace.days}</ThemedText>
+      <ThemedText style={[Type.label, { fontFamily: Fonts.monoBold, color: colors.textMuted }]}>{pace.days}</ThemedText>
     </View>
 
-    <View style={styles.bars}>
+    <Animated.View entering={reduceMotion ? fadeIn() : undefined} style={styles.bars}>
       {bars.map((bar, order) => {
         const selectable = bar.key !== '__other';
         const selected = selectable && selectedCategoryId === bar.categoryId;
@@ -178,7 +179,7 @@ export function MonthPaceChart({ pace, bars, monthName, previousName, hasFixed, 
             {contents}
           </View>;
       })}
-    </View>
+    </Animated.View>
     {bars.some((bar) => bar.budgetPaise !== null && !bar.fixed) && lastDay < pace.days
       ? <ThemedText style={[Type.note, { color: colors.textSecondary }]}>Yellow tick: where a budget would be if spent evenly through the month.</ThemedText> : null}
   </View>;
