@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: Spacing.gutter,
     paddingTop: Spacing.two,
-    paddingBottom: Spacing.two,
+    paddingBottom: Platform.OS === 'web' ? Spacing.tabBarClearance : Spacing.two,
     borderTopWidth: Stroke.hairline,
     gap: Spacing.two,
   },
