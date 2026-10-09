@@ -67,7 +67,7 @@ Android confirms committed manual entry saves/edits, newly inserted pastes, and 
 
 CSV write failures now attempt deletion of the created file. If deletion also fails, a typed error reaches Settings with a warning to check the chosen folder for an incomplete CSV. Three injected tests cover successful write, successful cleanup and failed cleanup. Account/category saves clear stale notices at the start of a new action. Web export reports a download request rather than claiming a completed save; browser verification observed the notice and an actual one-row fictional CSV download with the expected exact amount and columns.
 
-Frozen installation, typecheck, lint, 34 mobile/data tests plus 31 parser tests, SDK dependency check, Expo Doctor (20/20), and Android/iOS/web exports passed. These checks do not prove Android destination cancellation, filesystem error behavior or physical haptics. Android's existing folder picker retains persisted directory grants; replacing it with a single-file destination or releasing grants is still required. Rohan's design-system PR #33 is now merged into dev; #31 and #37 remain open.
+Frozen installation, typecheck, lint, 34 mobile/data tests plus 31 parser tests, SDK dependency check, Expo Doctor (20/20), and Android/iOS/web exports passed. These checks predate PR #66's single-document flow and do not prove Android document-provider cancellation, filesystem error behavior or physical haptics. Rohan's design-system PR #33 is now merged into dev; #31 and #37 remain open.
 
 ## PR review browser checkpoint — 2026-10-08
 
@@ -76,6 +76,9 @@ On the combined #40/#41 revision, browser checks with fictional data confirmed t
 ## Identical no-reference paste collisions — 2026-10-09
 
 When the sender/body identity already exists and the parsed message has no UPI reference, review offers “Same message” by default or an explicit “Separate payment” choice. The separate path exposes the existing India date/time and requires a different actual time to the nearest second; two purchases in the same second must be entered manually. A selected timestamp produces a stable retry identity. UPI-reference matches remain unsplittable. Automated SQLite tests cover two identical purchases, a retry of the selected timestamp, corrected/deleted replay protection, same-second validation, key identity and absence of raw message text. This source revision has not yet had a browser or physical-device interaction check.
+## Android CSV single-file destination follow-up
+
+The Android exporter now opens the system `ACTION_CREATE_DOCUMENT` picker for one `text/csv` file instead of requesting a persistable folder grant. Cancel returns without creating a file; a successful result must include a document URI, and a failed write attempts to delete only that selected file. Automated checks cover cancellation, malformed picker results, selected-URI writes and cleanup. This does not verify Android document-provider behavior on a device; the rebuilt development client still needs a real-device cancel, successful save/readback and write-failure check. iOS implementation and device validation remain Rohan's work.
 
 ## Remaining release gates
 
