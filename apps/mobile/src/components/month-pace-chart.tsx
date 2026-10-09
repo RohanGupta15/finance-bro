@@ -139,14 +139,14 @@ export function MonthPaceChart({ pace, bars, monthName, previousName, hasFixed, 
       </Svg> : null}
     </View>
     <View style={styles.axis}>
-      <ThemedText style={[Type.label, { color: colors.textMuted }]}>1</ThemedText>
+      <ThemedText style={[Type.amountSmall, { color: colors.textMuted }]}>1</ThemedText>
       <View style={styles.legend}>
         <Svg width={18} height={6}><Line x1={1} x2={17} y1={3} y2={3} stroke={colors.text} strokeWidth={2.5} strokeLinecap="round" /></Svg>
         <ThemedText style={[Type.label, { color: colors.textSecondary }]}>{monthName}</ThemedText>
         <Svg width={18} height={6} style={styles.key}><Line x1={1} x2={17} y1={3} y2={3} stroke={colors.textSecondary} strokeWidth={1.5} strokeDasharray="4 4" /></Svg>
         <ThemedText style={[Type.label, { color: colors.textSecondary }]}>{previousName}</ThemedText>
       </View>
-      <ThemedText style={[Type.label, { color: colors.textMuted }]}>{pace.days}</ThemedText>
+      <ThemedText style={[Type.amountSmall, { color: colors.textMuted }]}>{pace.days}</ThemedText>
     </View>
 
     <View style={styles.bars}>

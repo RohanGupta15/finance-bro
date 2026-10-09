@@ -131,7 +131,7 @@ export function Home() {
           <ThemedText style={Type.screenTitle}>{selected.counterparty ?? selected.categoryName ?? 'Entry'}</ThemedText>
           <ThemedText style={Type.amountHero} adjustsFontSizeToFit numberOfLines={1}>{exactMoney(selected.amountPaise)}</ThemedText>
           <ThemedText style={Type.body}>{selected.direction} · {selected.kind} · {selected.status}</ThemedText>
-          <ThemedText style={Type.note}>{indiaDate(selected.occurredAt)} · {selected.source}{selected.userEdited && selected.source !== 'manual' ? ' · corrected' : ''}{selected.excludeFromStats ? ' · excluded from totals' : ''}</ThemedText>
+          <ThemedText style={Type.note}><ThemedText style={Type.amountSmall}>{indiaDate(selected.occurredAt)}</ThemedText> · {selected.source}{selected.userEdited && selected.source !== 'manual' ? ' · corrected' : ''}{selected.excludeFromStats ? ' · excluded from totals' : ''}</ThemedText>
           <ThemedText style={Type.body}>{selected.categoryName ?? 'Uncategorized'} · {selected.accountName ?? 'No account'}</ThemedText>
           {selected.note ? <ThemedText style={Type.body}>{selected.note}</ThemedText> : null}
           <LedgerButton label="Edit entry" disabled={deleting} onPress={() => setMode('entry')} />
@@ -148,7 +148,7 @@ export function Home() {
           <View style={styles.headerActions}>
             <LedgerButton label="Paste a message" icon="paste" iconOnly disabled={!ledger || loading} onPress={() => setMode('paste')} />
             <Pressable accessibilityRole="button" accessibilityLabel="Add entry" accessibilityState={{ disabled: !ledger || loading }} disabled={!ledger || loading}
-              onPress={() => setMode('entry')} style={({ pressed }) => [styles.add, printed, { backgroundColor: colors.accent, borderColor: colors.text, opacity: !ledger || loading ? 0.5 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] }]}>
+              onPress={() => setMode('entry')} style={({ pressed }) => [styles.add, printed, { backgroundColor: colors.accent, borderColor: colors.text, opacity: !ledger || loading ? 0.5 : pressed && reduceMotion ? 0.72 : 1, transform: [{ scale: pressed && !reduceMotion ? 0.96 : 1 }] }]}>
               <Icon name="add" size={28} color={colors.onAccent} />
             </Pressable>
           </View>
@@ -156,13 +156,13 @@ export function Home() {
         {summary && !loading && !error ? <Animated.View key={`hero-${month}`} entering={fadeIn()} style={styles.hero}>
           <ThemedText style={styles.heroAmount} adjustsFontSizeToFit numberOfLines={1}>{money(summary.expensePaise)}</ThemedText>
           <ThemedText themeColor="textSecondary" style={Type.note}>
-            spent{budgetTotal ? ` of ${money(budgetTotal)}` : ''} · {rows.length} {rows.length === 1 ? 'entry' : 'entries'}
+            spent{budgetTotal ? ` of ${money(budgetTotal)}` : ''} · <ThemedText themeColor="textSecondary" style={Type.amountSmall}>{rows.length}</ThemedText> {rows.length === 1 ? 'entry' : 'entries'}
           </ThemedText>
         </Animated.View> : null}
         {error ? <View style={styles.section}><ThemedText accessibilityRole="alert">{error}</ThemedText><LedgerButton label="Retry" onPress={() => setRevision((value) => value + 1)} /></View> : null}
 
         {isCurrentMonth && !loading && !error ? <View style={styles.section}>
-          <SectionHeading title="Today" detail={pulls.length ? `${today.length} ${today.length === 1 ? 'entry' : 'entries'}` : undefined} />
+          <SectionHeading title="Today" count={pulls.length ? today.length : undefined} />
           {pulls.length ? <View style={styles.fan}>
             {[...pulls].reverse().map((row, reversedIndex) => {
               const index = pulls.length - 1 - reversedIndex;
@@ -201,7 +201,7 @@ export function Home() {
                 <Pressable accessibilityRole="button" aria-pressed={on} accessibilityState={{ selected: on }}
                   accessibilityLabel={`${stamp.categoryName ?? 'Uncategorized'}, ${money(stamp.expensePaise)}, ${count} ${count === 1 ? 'entry' : 'entries'}. ${on ? 'Showing only these entries.' : 'Show only these entries.'}`}
                   onPress={() => setCategoryId(on ? undefined : stamp.categoryId)}
-                  style={({ pressed }) => [styles.tile, { backgroundColor: on ? colors.fill : colors.backgroundElement, borderColor: colors.border, transform: [{ scale: pressed ? 0.96 : 1 }] }]}>
+                  style={({ pressed }) => [styles.tile, { backgroundColor: on ? colors.fill : colors.backgroundElement, borderColor: colors.border, opacity: pressed && reduceMotion ? 0.72 : 1, transform: [{ scale: pressed && !reduceMotion ? 0.96 : 1 }] }]}>
                   <View style={[styles.tileGlyph, { backgroundColor: dot(stamp.categoryName) }]}><Icon name={categoryIcon(stamp.categoryName)} size={16} color={scheme === 'light' ? '#FFFFFF' : colors.background} /></View>
                   <ThemedText style={[Type.label, { color: on ? colors.background : colors.textSecondary }]} numberOfLines={1}>{stamp.categoryName ?? 'Uncategorized'}</ThemedText>
                   <ThemedText style={[Type.amountSmall, { color: on ? colors.background : colors.text }]} adjustsFontSizeToFit numberOfLines={1}>{money(stamp.expensePaise)}</ThemedText>
@@ -223,7 +223,7 @@ export function Home() {
           <View style={styles.sectionRow}>
             <View style={styles.grow}>
               <ThemedText style={Type.sectionTitle} accessibilityRole="header">Entries</ThemedText>
-              <ThemedText themeColor="textSecondary" style={Type.label}>{activeFilters ? `${visibleRows.length} of ${rows.length} · filtered` : `${rows.length} this month`}</ThemedText>
+              <ThemedText themeColor="textSecondary" style={Type.label}>{activeFilters ? <><ThemedText themeColor="textSecondary" style={Type.amountSmall}>{visibleRows.length}</ThemedText> of <ThemedText themeColor="textSecondary" style={Type.amountSmall}>{rows.length}</ThemedText> · filtered</> : <><ThemedText themeColor="textSecondary" style={Type.amountSmall}>{rows.length}</ThemedText> this month</>}</ThemedText>
             </View>
             {activeFilters ? <LedgerButton label="Clear filters" icon="close" iconOnly onPress={() => { setCategoryId(undefined); setDirection(undefined); setAccountId(undefined); }} /> : null}
             <LedgerButton label={filters ? 'Hide filters' : 'Filter entries'} icon="filter" iconOnly selected={filters} expanded={filters} onPress={() => setFilters(!filters)} />
@@ -240,7 +240,7 @@ export function Home() {
           </Animated.View> : null}
           {visibleRows.length === 0 ? <ThemedText themeColor="textSecondary" style={Type.note}>{rows.length ? 'No entries match these filters.' : `Nothing recorded in ${monthName} yet.`}</ThemedText>
             : groups.map((group) => <View key={group.date} style={styles.group}>
-              <ThemedText themeColor="textSecondary" style={[Type.label, styles.groupLabel]} accessibilityRole="header">{group.label}</ThemedText>
+              <DayLabel label={group.label} />
               {group.rows.map((row, index) => <Pressable key={row.id} accessibilityRole="button"
                 accessibilityLabel={`${row.counterparty ?? row.categoryName ?? 'Entry'}, ${row.direction === 'debit' ? 'spent' : 'received'} ${money(row.amountPaise)}${row.status !== 'posted' ? `, ${row.status}` : ''}${row.excludeFromStats ? ', not counted' : ''}`}
                 onPress={() => select(row)} style={({ pressed }) => [styles.entryRow, index > 0 ? { borderTopWidth: 1.5, borderColor: colors.rule } : undefined, { opacity: pressed ? 0.6 : 1 }]}>
@@ -302,11 +302,18 @@ function entryIcon(row: Row): IconName {
   return categoryIcon(row.categoryName);
 }
 
-function SectionHeading({ title, detail }: { title: string; detail?: string }) {
+function SectionHeading({ title, count }: { title: string; count?: number }) {
   return <View style={styles.sectionRow}>
     <ThemedText style={[Type.sectionTitle, styles.grow]} accessibilityRole="header">{title}</ThemedText>
-    {detail ? <ThemedText themeColor="textSecondary" style={Type.label}>{detail}</ThemedText> : null}
+    {count !== undefined ? <ThemedText themeColor="textSecondary" style={Type.label}><ThemedText themeColor="textSecondary" style={Type.amountSmall}>{count}</ThemedText> {count === 1 ? 'entry' : 'entries'}</ThemedText> : null}
   </View>;
+}
+
+function DayLabel({ label }: { label: string }) {
+  const match = /^(\D*)(\d+)(.*)$/.exec(label);
+  return <ThemedText themeColor="textSecondary" style={[Type.label, styles.groupLabel]} accessibilityRole="header">
+    {match ? <>{match[1]}<ThemedText themeColor="textSecondary" style={Type.amountSmall}>{match[2]}</ThemedText>{match[3]}</> : label}
+  </ThemedText>;
 }
 
 const styles = StyleSheet.create({

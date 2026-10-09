@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
-import Animated, { SlideInDown, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { SlideInDown, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
@@ -20,12 +20,13 @@ export function LedgerButton({ label, onPress, disabled = false, primary = false
   icon?: IconName; iconOnly?: boolean;
 }) {
   const colors = useTheme();
+  const reduceMotion = useReducedMotion();
   const ink = primary ? colors.onAccent : selected ? colors.background : colors.text;
   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled, ...(selected !== undefined && { selected }), ...(expanded !== undefined && { expanded }) }}
     aria-pressed={selected} aria-expanded={expanded} disabled={disabled}
     onPress={onPress} style={({ pressed }) => [styles.button, iconOnly && styles.iconButton, {
       borderColor: colors.border, backgroundColor: primary ? colors.accent : selected ? colors.fill : colors.backgroundElement,
-      opacity: disabled ? 0.5 : 1, transform: [{ scale: pressed && !disabled ? 0.96 : 1 }],
+      opacity: disabled ? 0.5 : pressed && reduceMotion ? 0.72 : 1, transform: [{ scale: pressed && !disabled && !reduceMotion ? 0.96 : 1 }],
     }]}>
     {icon ? <Icon name={icon} size={20} color={ink} /> : null}
     {iconOnly ? null : <ThemedText style={[Type.body, { fontFamily: Fonts.sansSemiBold, color: ink }]}>{label}</ThemedText>}
@@ -79,6 +80,7 @@ export function MonthPicker({ month, onChange, variant = 'pill' }: {
   month: string; onChange: (month: string) => void; variant?: 'title' | 'pill';
 }) {
   const colors = useTheme();
+  const reduceMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
   const [months, setMonths] = useState<MonthPickerRow[] | null>(null);
@@ -96,12 +98,12 @@ export function MonthPicker({ month, onChange, variant = 'pill' }: {
   const trigger = variant === 'title'
     ? <Pressable accessibilityRole="button" accessibilityLabel={`${label}. Choose month`} onPress={show}
       style={({ pressed }) => [styles.titleTrigger, { opacity: pressed ? 0.6 : 1 }]}>
-      <ThemedText style={Type.screenTitle} numberOfLines={1}>{label}</ThemedText>
+      <ThemedText style={Type.screenTitle} numberOfLines={1}><MonthLabel month={month} withYear={showYear} /></ThemedText>
       <Icon name="expand" size={26} color={colors.text} />
     </Pressable>
     : <Pressable accessibilityRole="button" accessibilityLabel={`${label}. Choose month`} onPress={show}
-      style={({ pressed }) => [styles.button, styles.monthPill, { backgroundColor: colors.backgroundElement, borderColor: colors.border, transform: [{ scale: pressed ? 0.96 : 1 }] }]}>
-      <ThemedText style={{ ...Type.body, fontFamily: Fonts.sansHeavy }}>{label}</ThemedText>
+      style={({ pressed }) => [styles.button, styles.monthPill, { backgroundColor: colors.backgroundElement, borderColor: colors.border, opacity: pressed && reduceMotion ? 0.72 : 1, transform: [{ scale: pressed && !reduceMotion ? 0.96 : 1 }] }]}>
+      <ThemedText style={{ ...Type.body, fontFamily: Fonts.sansHeavy }}><MonthLabel month={month} withYear={showYear} /></ThemedText>
       <Icon name="expand" size={18} color={colors.text} />
     </Pressable>;
 
@@ -116,7 +118,7 @@ export function MonthPicker({ month, onChange, variant = 'pill' }: {
           <MonthStepButton label="Previous month" icon="back" disabled={month === '0001-01'} onPress={() => onChange(shiftMonth(month, -1))} />
           <View style={styles.sheetHeading}>
             <ThemedText style={Type.sectionTitle} accessibilityRole="header">Choose month</ThemedText>
-            <ThemedText style={[Type.label, { color: colors.textSecondary }]}>{monthName(month, true)}</ThemedText>
+            <ThemedText style={[Type.label, { color: colors.textSecondary }]}><MonthLabel month={month} withYear color={colors.textSecondary} /></ThemedText>
           </View>
           <MonthStepButton label="Next month" icon="next" disabled={month === '9999-12'} onPress={() => onChange(shiftMonth(month, 1))} />
         </View>
@@ -130,9 +132,9 @@ export function MonthPicker({ month, onChange, variant = 'pill' }: {
                 onPress={() => { setOpen(false); if (!selected) onChange(row.month); }}
                 style={({ pressed }) => [styles.monthRow, { backgroundColor: selected ? colors.fill : pressed ? colors.backgroundSelected : 'transparent' }]}>
                 <View style={styles.monthWords}>
-                  <ThemedText style={[Type.rowTitle, { color: selected ? colors.background : colors.text }]}>{monthName(row.month, row.month.slice(0, 4) !== current.slice(0, 4))}</ThemedText>
+                  <ThemedText style={[Type.rowTitle, { color: selected ? colors.background : colors.text }]}><MonthLabel month={row.month} withYear={row.month.slice(0, 4) !== current.slice(0, 4)} color={selected ? colors.background : colors.text} /></ThemedText>
                   <ThemedText style={[Type.label, { color: selected ? colors.background : colors.textSecondary }]}>
-                    {row.month === current ? 'This month · ' : ''}{row.entryCount} {row.entryCount === 1 ? 'entry' : 'entries'}
+                    {row.month === current ? 'This month · ' : ''}<ThemedText style={[Type.amountSmall, { color: selected ? colors.background : colors.textSecondary }]}>{row.entryCount}</ThemedText> {row.entryCount === 1 ? 'entry' : 'entries'}
                   </ThemedText>
                 </View>
                 <ThemedText style={[Type.amountSmall, { color: selected ? colors.background : colors.text }]}>{money(row.expensePaise)}</ThemedText>
@@ -146,6 +148,12 @@ export function MonthPicker({ month, onChange, variant = 'pill' }: {
   </>;
 }
 
+function MonthLabel({ month, withYear, color }: { month: string; withYear: boolean; color?: string }) {
+  const label = monthName(month, withYear);
+  const year = withYear ? label.match(/\d+/)?.[0] ?? '' : '';
+  const index = year ? label.lastIndexOf(year) : -1;
+  return index < 0 ? label : <>{label.slice(0, index)}<ThemedText style={[Type.amountSmall, color ? { color } : undefined]}>{year}</ThemedText>{label.slice(index + year.length)}</>;
+}
 function MonthStepButton({ label, icon, disabled, onPress }: {
   label: string; icon: IconName; disabled: boolean; onPress: () => void;
 }) {
