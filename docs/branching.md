@@ -1,6 +1,6 @@
 # Branching and releases
 
-Keep two long-lived branches. `dev` is the integration line and intended GitHub default branch; `main` is the stable release line. The owner must apply the default-branch setting below.
+Keep two long-lived branches. `dev` is the integration line and GitHub default branch; `main` is the stable release line.
 
 - `dev` receives everyday work and holds the next release.
 - `main` contains the latest promoted release.
@@ -17,20 +17,20 @@ For an urgent fix, branch `hotfix/<name>` from `main`, open a pull request into 
 
 ## GitHub protection
 
-Once an administrator applies the repository rulesets below, GitHub will require changes to reach `main` and `dev` through pull requests. The rulesets require one approval from a code owner, approval after the latest push, resolved review comments, and the `Validate and bundle` check on an up-to-date branch. They block force pushes and branch deletion. This also protects `main` and `dev` from the automatic deletion of merged head branches. The `main` ruleset permits merge commits only. The `dev` ruleset permits both merge commits and squash merges so release and sync PRs can preserve ancestry while everyday changes stay compact.
+The active repository rulesets require pull requests for `main` and `dev`, one code-owner approval after the latest push, resolved review comments, and the `Validate and bundle` check on an up-to-date branch. They block force pushes and branch deletion, and have no bypass actors. The `main` ruleset permits merge commits only. The `dev` ruleset permits both merge commits and squash merges so release and sync PRs can preserve ancestry while everyday changes stay compact.
 
 The source-branch names and feature-to-`dev` routing above are team conventions; the target-branch rulesets do not enforce them. GitHub applies the merge-method restrictions by target branch.
 
 ## Security analysis
 
-The CodeQL workflow scans JavaScript and TypeScript on pushes and pull requests to `dev` and `main`, with an additional weekly scan. Review results in the repository's **Security → Code scanning** tab. `Validate and bundle` is the required branch check; CodeQL currently reports findings separately.
+The advanced CodeQL workflow scans JavaScript and TypeScript on pushes and pull requests to `dev` and `main`, with an additional weekly scan. Its latest reviewed analysis succeeded on 2026-10-06. GitHub's default CodeQL setup is not configured; the workflow in `.github/workflows/codeql.yml` is the active setup. Review results in **Security → Code scanning**. `Validate and bundle` is the required branch check; CodeQL reports findings separately.
 
 ## Apply the repository settings
 
-These files describe the desired GitHub settings; no branch protections are active until an administrator applies the rulesets. The current `suvodeep12` GitHub session has write access but not admin access. Make sure `main` and `dev` exist and CI has run before requiring its status check. From the repository root, sign in as `RohanGupta15` or another repository administrator and run this PowerShell block. It updates rulesets by name when they already exist, creates missing ones, and enables automatic branch deletion only after both protections are in place:
+The public organization repository is `Starforge-lab/finance-bro`; `suvodeep12` and `RohanGupta15` both have repository admin access. `dev` is the default branch, and the active `main` and `dev` rulesets match the JSON files below. Reapply these settings as an administrator after changing either ruleset file or `.github/repository-settings.json`. From the repository root, run this PowerShell block. It updates rulesets by name when they already exist, creates missing ones, and enables automatic branch deletion only after both protections are in place:
 
 ```powershell
-$rulesets = @(gh api repos/RohanGupta15/finance-bro/rulesets | ConvertFrom-Json)
+$rulesets = @(gh api repos/Starforge-lab/finance-bro/rulesets | ConvertFrom-Json)
 if ($LASTEXITCODE -ne 0) { throw 'Could not list repository rulesets.' }
 
 $desiredRulesets = @(
@@ -43,25 +43,23 @@ foreach ($desired in $desiredRulesets) {
   if ($existing.Count -gt 1) { throw "Resolve duplicate rulesets named $($desired.Name) first." }
 
   if ($existing.Count -eq 1) {
-    gh api --method PUT "repos/RohanGupta15/finance-bro/rulesets/$($existing[0].id)" --input $desired.File
+    gh api --method PUT "repos/Starforge-lab/finance-bro/rulesets/$($existing[0].id)" --input $desired.File
   } else {
-    gh api --method POST repos/RohanGupta15/finance-bro/rulesets --input $desired.File
+    gh api --method POST repos/Starforge-lab/finance-bro/rulesets --input $desired.File
   }
   if ($LASTEXITCODE -ne 0) { throw "Could not apply ruleset $($desired.Name)." }
 }
 
-gh api --method PATCH repos/RohanGupta15/finance-bro --input .github/repository-settings.json
+gh api --method PATCH repos/Starforge-lab/finance-bro --input .github/repository-settings.json
 if ($LASTEXITCODE -ne 0) { throw 'Could not update repository merge settings.' }
-gh api repos/RohanGupta15/finance-bro/rulesets --jq '.[] | {id, name, enforcement}'
+gh api repos/Starforge-lab/finance-bro/rulesets --jq '.[] | {id, name, enforcement, bypass_actors}'
 ```
 
 GitHub requires repository administration write access to manage rulesets. If the repository settings update rejects `delete_branch_on_merge`, enable that option in Settings → General after confirming both protections are active. See [GitHub's repository ruleset API](https://docs.github.com/en/rest/repos/rules) and [repository settings API](https://docs.github.com/en/rest/repos/repos#update-a-repository).
 
 
-## GitHub Free and ownership
+## GitHub Free and security settings
 
 This repository is public, so repository-level branch rulesets and CodeQL are available with GitHub Free. Keep workflows on standard hosted runners; this setup requires no paid GitHub feature. See [ruleset availability](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets).
 
-Personal repositories have an owner and collaborators; collaborators cannot be promoted to a separate admin role. Rohan can apply the settings as owner. Shared administration would require a separately agreed transfer to a GitHub Free organization and repository Admin roles for both maintainers.
-
-After merging the foundation, the owner should enable available free Dependabot alerts, secret scanning/push protection and private vulnerability reporting in Settings → Security. Confirm the CodeQL workflow is the active setup and avoid running conflicting default and advanced configurations. The collaborator could not inspect that setting due insufficient permissions. Track activation in [issue #2](https://github.com/RohanGupta15/finance-bro/issues/2).
+As of 2026-10-06, Dependabot alerts and security updates, secret scanning and push protection, and private vulnerability reporting are enabled in Settings → Security. The advanced CodeQL workflow is active; the default setup is not configured. Track repository setup in [issue #2](https://github.com/Starforge-lab/finance-bro/issues/2).

@@ -6,7 +6,7 @@ Guidance for Claude Code (and humans) working in this repo. Product context is i
 
 ## What we're building
 
-A mobile-first personal expense tracker for India. USP: it reads bank / UPI / card / wallet transaction SMS on-device and logs debits and credits automatically. Users can still add, edit, delete and re-categorise anything manually. Effortless, minimal taps, no setup friction. Working name `finance-bro`; the product name is decided after v1.
+A mobile-first personal expense tracker for India. USP: it reads bank / UPI / card / wallet transaction SMS on-device and logs debits and credits automatically. Users can still add, edit, delete and re-categorise anything manually. Effortless, minimal taps, no setup friction. Finance Bro is the working product name; a final name is not selected.
 
 ## Stack
 
@@ -80,7 +80,7 @@ Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com
 ## Hard rules
 
 1. **Parser is pure.** `packages/sms-parser` has no React Native, Expo, DB or `Date.now()` imports. Time and locale are passed in. Same input → same output.
-2. **Money is integer paise** (`amountPaise: number`). Never floats. Format only at the UI edge.
+2. **Money is safe integer paise** (`amountPaise: number`). Never floats. Format only at the UI edge. The parser rejects unsafe values and malformed precision/grouping; invalid transaction money stays in review without a candidate rather than falling through to a later fee. Invalid optional balances are omitted.
 3. **Never hand-edit `android/` or `ios/`.** They are generated (CNG). All native config goes through config plugins in `modules/*` or `app.config.ts`.
 4. **SMS is read-only.** We never send, delete, mark-read or modify SMS. We do not copy SMS bodies into our DB (see Privacy).
 5. **No network calls with user data** without explicit, opt-in consent. No analytics/ads SDKs. Crash reporting, if added, is opt-in.
@@ -135,12 +135,12 @@ Dev builds use `APP_VARIANT=development` (set in `eas.json`), giving the id `com
 - Manifest `BroadcastReceiver` for `SMS_RECEIVED` (works when the app is killed). It pre-filters cheaply on sender/keywords and enqueues the message reference.
 - Background parser execution is unproven on this New Architecture: #16 must establish a bounded runtime/SQLite path. Use WorkManager for best-effort catch-up with references only and app-open recovery. Notifications hide financial details by default; source text is never a notification payload.
 - **Catch-up on every app open:** query the SMS inbox in bounded batches from the last committed cursor. The initial history window defaults to 90 days only after explicit preview/consent. Recovery depends on permission and the original message remaining available; test process death, force-stop/reopen, installer allowlisting and OEM restrictions under #16. Advance the cursor atomically with ingestion; never queue bodies to disk.
-- JS API: `requestPermission()`, `queryInbox({ sinceId, limit })`, `drainQueue()`, `onSms` event.
+- Planned JS boundary: permission request and bounded inbox queries by source reference. Final event/catch-up methods depend on #16 and the shared ingestion contract in #43; no body queue or body-bearing durable event is selected.
 
 ### iOS (`modules/transaction-intent`, Swift)
 
 - App Intent `LogTransactionFromSMS(text: String)`, `openAppWhenRun = false`, returns a confirmation dialog ("Logged ₹450 · Swiggy").
-- **Parsing runs inside the intent** using the same `sms-parser` compiled to a single JS bundle and executed in `JavaScriptCore`. One parser, both platforms. The intent writes to the app's SQLite DB.
+- Planned, pending #17: run the shared parser bundle in JavaScriptCore inside the App Intent, then write through the shared SQLite ingestion contract. Rohan must prove runtime availability, database access, concurrency and locked/background execution before this is treated as implemented.
 - The user creates a Shortcuts Message automation with supported filters and automatic running. Rohan must prove message-text input, actual trigger coverage and background/locked execution in #17; an unfiltered any-message trigger is not assumed. Apps cannot create personal automations programmatically. Provide illustrated setup and manual/paste/share recovery; this path has no general SMS inbox access or historical backfill.
 - Fallbacks: paste box, and clipboard detection on foreground. Share extension is v1.1.
 
@@ -183,6 +183,8 @@ Behaviour was originally inspired by [Sushi](https://github.com/jerameel/sushi) 
 - Where we go further: auto-logged entries with one-tap category fix, number-pad-first manual add (~3 s), a Review inbox, and insights that state facts ("Food is 32% higher than last month") rather than chart walls.
 
 ## Scope
+
+Follow [the manual-first roadmap](docs/mvp-roadmap.md) for delivery order and [PRODUCT.md](PRODUCT.md) for confirmed scope. Native import experiments do not block the usable manual-first MVP.
 
 For 2.0 implementation, import adapters, recovery or forecasts, follow [the approved 2.0 roadmap](docs/v2-roadmap.md) and its linked issues. It supersedes the older automatic-import plans below: source text stays transient, Android uses inbox catch-up, iOS automation requires #17 device proof, and provider/source-build gates remain explicit. Suvo owns shared contracts/Android/web; Rohan owns every iOS adapter and physical check. Planning grants no real-message access, account connection, signing or publication.
 
