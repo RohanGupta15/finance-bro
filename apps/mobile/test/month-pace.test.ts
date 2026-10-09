@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { it } from 'node:test';
-import { buildMonthPace, spendingPaise, topCategoryBars, type PaceRow } from '../src/utils/month-pace';
+import { buildMonthPace, flexibleSpendSummary, spendingPaise, topCategoryBars, type PaceRow } from '../src/utils/month-pace';
 
 const at = (date: string, hour = 12) => new Date(`${date}T${String(hour).padStart(2, '0')}:00:00+05:30`);
 const spend = (date: string, rupees: number, categoryId: string | null = 'food', extra: Partial<PaceRow> = {}): PaceRow => ({
@@ -40,6 +40,13 @@ it('builds running totals to today and compares flexible spend with the same day
   assert.deepEqual(pace.fixedStep, { day: 2, amountPaise: 950_000, label: 'Rent' });
 });
 
+it('describes more, less, equal, and missing-baseline comparisons clearly', () => {
+  const details = { hasFixed: true, previousName: 'September', day: 8 };
+  assert.equal(flexibleSpendSummary({ ...details, currentPaise: 9_075, previousPaise: 7_050 }), '₹90.75 flexible so far, ₹20.25 more than September by day 8.');
+  assert.equal(flexibleSpendSummary({ ...details, currentPaise: 5_005, previousPaise: 7_075 }), '₹50.05 flexible so far, ₹20.70 less than September by day 8.');
+  assert.equal(flexibleSpendSummary({ ...details, currentPaise: 7_075, previousPaise: 7_075 }), '₹70.75 flexible so far, the same amount as September by day 8.');
+  assert.equal(flexibleSpendSummary({ ...details, currentPaise: 5_050, previousPaise: null }), '₹50.50 flexible spent so far. No September history to compare.');
+});
 it('uses India dates, so a late-night UTC entry lands on the right day', () => {
   const pace = buildMonthPace({
     month: '2026-10', today: '2026-10-02', categories, previousRows: [],
@@ -85,9 +92,11 @@ it('shows the top three categories against their budgets and folds the rest into
   assert.equal(bars[3]!.fill, 1);
 });
 
-it('lists a fourth category instead of a one-item Other', () => {
+it('shows the top three categories and folds the fourth into informational Other', () => {
   const spending = ['a', 'b', 'c', 'd'].map((id, index) => ({ categoryId: id, categoryName: id, expensePaise: (4 - index) * 100 }));
   const bars = topCategoryBars({ spending, budgets: [], categories: [] });
-  assert.deepEqual(bars.map((bar) => bar.label), ['a', 'b', 'c', 'd']);
+  assert.deepEqual(bars.map((bar) => bar.label), ['a', 'b', 'c', 'Other · 1']);
   assert.deepEqual(bars.map((bar) => bar.fill), [1, 0.75, 0.5, 0.25]);
+  assert.equal(bars[3]!.spentPaise, 100);
+  assert.equal(bars[3]!.categoryId, null);
 });

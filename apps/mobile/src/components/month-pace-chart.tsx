@@ -6,8 +6,9 @@ import { ThemedText } from '@/components/themed-text';
 import { Fonts, Radius, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { toggleCategoryFilter } from '@/utils/category-filter';
+import { flexibleSpendSummary, type CategoryBar, type MonthPace } from '@/utils/month-pace';
 import { money } from '@/utils/display';
-import type { CategoryBar, MonthPace } from '@/utils/month-pace';
+
 
 const HEIGHT = 132;
 const TOP = 14;
@@ -51,11 +52,10 @@ export function MonthPaceChart({ pace, bars, monthName, previousName, hasFixed, 
     setDay(Math.min(lastDay, Math.max(1, Math.round(((locationX - 4) / (width - 8)) * (pace.days - 1)) + 1)));
   };
 
-  const flexibleDelta = pace.previousFlexiblePaise === null ? null : pace.flexiblePaise - pace.previousFlexiblePaise;
-  const kind = hasFixed ? ' flexible' : '';
-  const summary = flexibleDelta === null
-    ? `${money(pace.flexiblePaise)}${kind} spent so far. No ${previousName} history to compare.`
-    : `${money(pace.flexiblePaise)}${kind} so far, ${money(Math.abs(flexibleDelta))} ${flexibleDelta > 0 ? 'more' : 'less'} than ${previousName} by day ${Math.min(lastDay, pace.previous.length)}.`;
+  const summary = flexibleSpendSummary({
+    currentPaise: pace.flexiblePaise, previousPaise: pace.previousFlexiblePaise, hasFixed, previousName,
+    day: Math.min(lastDay, pace.previous.length),
+  });
   const readout = day === null ? summary : (() => {
     const total = pace.current[day - 1] ?? 0;
     const thatDay = total - (day > 1 ? pace.current[day - 2] ?? 0 : 0);
@@ -119,22 +119,30 @@ export function MonthPaceChart({ pace, bars, monthName, previousName, hasFixed, 
       {bars.map((bar) => {
         const selectable = bar.key !== '__other';
         const selected = selectable && selectedCategoryId === bar.categoryId;
-        const amount = bar.budgetPaise === null ? `${money(bar.spentPaise)} · no budget` : `${money(bar.spentPaise)} of ${money(bar.budgetPaise)}`;
-        return <Pressable key={bar.key} disabled={!selectable} onPress={() => onSelectCategory(toggleCategoryFilter(selectedCategoryId, bar.categoryId))}
-          accessibilityRole={selectable ? 'button' : 'text'} accessibilityState={{ selected }}
-          accessibilityLabel={`${bar.label}${bar.fixed ? ', fixed cost' : ''}, ${amount}${bar.over ? ', over budget' : ''}`}
-          accessibilityHint={selectable ? 'Shows only these entries below.' : undefined}
-          style={({ pressed }) => [styles.bar, { borderColor: selected ? colors.fill : 'transparent', opacity: pressed ? 0.7 : 1 }]}>
+        const amount = bar.budgetPaise === null ? money(bar.spentPaise) + ' · no budget' : money(bar.spentPaise) + ' of ' + money(bar.budgetPaise);
+        const accessibilityLabel = bar.label + (bar.fixed ? ', fixed cost' : '') + ', ' + amount + (bar.over ? ', over budget' : '');
+        const contents = <>
           <View style={styles.barHead}>
             <ThemedText style={[Type.rowTitle, styles.barLabel]} numberOfLines={1}>{bar.label}</ThemedText>
             {bar.fixed ? <ThemedText style={[Type.label, { color: colors.textSecondary }]}>Fixed</ThemedText> : null}
             <ThemedText style={[Type.amountSmall, { color: bar.over ? colors.over : colors.text }]} numberOfLines={1}>{amount}</ThemedText>
           </View>
           <View style={[styles.track, { backgroundColor: colors.track }]}>
-            <View style={[styles.fill, { width: `${bar.fill * 100}%`, backgroundColor: bar.over ? colors.over : bar.budgetPaise === null ? colors.textMuted : colors.fill }]} />
-            {bar.budgetPaise !== null && !bar.fixed && lastDay < pace.days ? <View style={[styles.pace, { left: `${pacePosition * 100}%`, backgroundColor: colors.accent }]} /> : null}
+            <View style={[styles.fill, { width: String(bar.fill * 100) + '%', backgroundColor: bar.over ? colors.over : bar.budgetPaise === null ? colors.textMuted : colors.fill }]} />
+            {bar.budgetPaise !== null && !bar.fixed && lastDay < pace.days ? <View style={[styles.pace, { left: String(pacePosition * 100) + '%', backgroundColor: colors.accent }]} /> : null}
           </View>
-        </Pressable>;
+        </>;
+        return selectable
+          ? <Pressable key={bar.key} onPress={() => onSelectCategory(toggleCategoryFilter(selectedCategoryId, bar.categoryId))}
+            accessibilityRole="button" accessibilityState={{ selected }} accessibilityLabel={accessibilityLabel}
+            accessibilityHint="Shows only these entries below."
+            style={({ pressed }) => [styles.bar, { borderColor: selected ? colors.fill : 'transparent', opacity: pressed ? 0.7 : 1 }]}>
+            {contents}
+          </Pressable>
+          : <View key={bar.key} accessible accessibilityRole="text" accessibilityLabel={accessibilityLabel}
+            style={[styles.bar, { borderColor: 'transparent' }]}>
+            {contents}
+          </View>;
       })}
     </View>
     {bars.some((bar) => bar.budgetPaise !== null && !bar.fixed) && lastDay < pace.days
