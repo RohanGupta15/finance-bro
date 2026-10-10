@@ -52,6 +52,14 @@ instantiation. The single desktop sample measured about 241 ms for the KDF and
 243 ms for the scheduled timer. These observations do not validate native or
 browser behavior and are not a performance distribution.
 
+The first manual binding run stopped before compilation because the upstream
+`1.0.22-stable` download changed after the earlier source check. Its pinned
+checksum correctly rejected the new bytes. Both manual modes now use the dated
+[signed source snapshot](../../scripts/spikes/vendor/README.md) retained in this
+repository. The archive hash, Minisign signature and trusted comment were
+verified locally; inspection found no compiled native libraries or unsafe
+archive paths. This verifies the new source input, not its Android build.
+
 Native binding compilation/linkage, APK provenance assertion, Android runtime
 vectors and blocking measurement remain pending. Production web export/browser
 initialization, iOS linkage/device vectors (Rohan), thread/offloading design,

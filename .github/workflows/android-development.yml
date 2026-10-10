@@ -75,15 +75,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install signature verifier
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y minisign
-      - name: Fetch source and signature
-        working-directory: ${{ runner.temp }}
+      - name: Stage the repository-pinned source snapshot and signature
         run: |
-          curl --fail --location --retry 3 --output libsodium-1.0.22-stable.tar.gz https://download.libsodium.org/libsodium/releases/libsodium-1.0.22-stable.tar.gz
-          curl --fail --location --retry 3 --output libsodium-1.0.22-stable.tar.gz.minisig https://download.libsodium.org/libsodium/releases/libsodium-1.0.22-stable.tar.gz.minisig
+          source="$GITHUB_WORKSPACE/scripts/spikes/vendor/libsodium-1.0.22-stable-20261009.tar.gz"
+          mkdir -p "$RUNNER_TEMP/libsodium-source-provenance"
+          sha256sum "$source" > "$RUNNER_TEMP/libsodium-source-provenance/source-tarball-sha256.txt"
+          cp "$source.minisig" "$RUNNER_TEMP/libsodium-source-provenance/"
       - name: Compile and inspect ARM64 library
         run: |
           export ANDROID_NDK_HOME="$ANDROID_SDK_ROOT/ndk/30.0.16248370"
-          bash scripts/spikes/build-libsodium-arm64.sh "$RUNNER_TEMP/libsodium-1.0.22-stable.tar.gz" "$RUNNER_TEMP/libsodium-source-check"
+          bash scripts/spikes/build-libsodium-arm64.sh "$GITHUB_WORKSPACE/scripts/spikes/vendor/libsodium-1.0.22-stable-20261009.tar.gz" "$RUNNER_TEMP/libsodium-source-check"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: libsodium-source-arm64
@@ -91,6 +92,7 @@ jobs:
             ${{ runner.temp }}/libsodium-source-check/*.txt
             ${{ runner.temp }}/libsodium-source-check/LICENSE.libsodium
             ${{ runner.temp }}/libsodium-source-check/libsodium-stable/libsodium-android-armv8-a+crypto/lib/libsodium.so
+            ${{ runner.temp }}/libsodium-source-provenance/**
           retention-days: 1
           if-no-files-found: error
   libsodium-binding:
@@ -122,18 +124,15 @@ jobs:
           cp apps/mobile/package.json "$RUNNER_TEMP/libsodium-binding-provenance/mobile-package.ephemeral.json"
       - name: Install signature verifier
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y minisign
-      - name: Fetch verified libsodium source
-        working-directory: ${{ runner.temp }}
+      - name: Stage the repository-pinned source snapshot and signature
         run: |
-          curl --fail --location --retry 3 --output libsodium-1.0.22-stable.tar.gz https://download.libsodium.org/libsodium/releases/libsodium-1.0.22-stable.tar.gz
-          curl --fail --location --retry 3 --output libsodium-1.0.22-stable.tar.gz.minisig https://download.libsodium.org/libsodium/releases/libsodium-1.0.22-stable.tar.gz.minisig
+          source="$GITHUB_WORKSPACE/scripts/spikes/vendor/libsodium-1.0.22-stable-20261009.tar.gz"
+          sha256sum "$source" > "$RUNNER_TEMP/libsodium-binding-provenance/source-tarball-sha256.txt"
+          cp "$source.minisig" "$RUNNER_TEMP/libsodium-binding-provenance/"
       - name: Build and inspect source ARM64 library
         run: |
           export ANDROID_NDK_HOME="$ANDROID_SDK_ROOT/ndk/30.0.16248370"
-          bash scripts/spikes/build-libsodium-arm64.sh "$RUNNER_TEMP/libsodium-1.0.22-stable.tar.gz" "$RUNNER_TEMP/libsodium-binding-source"
-          mkdir -p "$RUNNER_TEMP/libsodium-binding-provenance"
-          sha256sum "$RUNNER_TEMP/libsodium-1.0.22-stable.tar.gz" > "$RUNNER_TEMP/libsodium-binding-provenance/source-tarball-sha256.txt"
-          cp "$RUNNER_TEMP/libsodium-1.0.22-stable.tar.gz.minisig" "$RUNNER_TEMP/libsodium-binding-provenance/"
+          bash scripts/spikes/build-libsodium-arm64.sh "$GITHUB_WORKSPACE/scripts/spikes/vendor/libsodium-1.0.22-stable-20261009.tar.gz" "$RUNNER_TEMP/libsodium-binding-source"
       - name: Replace candidate bundled inputs with the verified source build
         run: |
           node scripts/spikes/prepare-libsodium-binding.mjs \
