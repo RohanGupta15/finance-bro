@@ -60,9 +60,24 @@ repository. The archive hash, Minisign signature and trusted comment were
 verified locally; inspection found no compiled native libraries or unsafe
 archive paths. This verifies the new source input, not its Android build.
 
+The retry compiled that signed source and passed candidate preparation. APK
+assembly then failed because the candidate's own Gradle file explicitly
+requested four ABIs despite the app's ARM64 build flag. The experiment supplies
+only ARM64. Preparation now verifies the original candidate Gradle hash and
+known ABI declaration before narrowing that disposable dependency to ARM64;
+provenance retains the original/prepared hashes. A copied-package fixture
+passed preparation and an altered Gradle file was rejected. The normal app's
+Gradle and dependency graph are unchanged.
+
+The temporary QA app also passed a production web export and visibly completed
+all eight shared vectors on a fresh localhost origin in the in-app browser.
+Its single desktop browser sample measured 143.7 ms for the KDF and 143.9 ms
+for the timer. This confirms that initializer and fixture on that browser;
+it does not prove responsive hashing, cross-browser coverage or a distribution.
+
 Native binding compilation/linkage, APK provenance assertion, Android runtime
-vectors and blocking measurement remain pending. Production web export/browser
-initialization, iOS linkage/device vectors (Rohan), thread/offloading design,
+vectors and blocking measurement remain pending. Additional browser coverage,
+iOS linkage/device vectors (Rohan), thread/offloading design,
 memory profiling, the full F-Droid dependency/license/reproducibility audit,
 atomic restore, key epochs and failure-preserving recovery remain open. Keep #42
 open and keep the archive format gated until the relevant requirements pass.

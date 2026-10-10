@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import assert from 'node:assert/strict';
 import { access, copyFile, cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -13,6 +14,7 @@ const provenanceRoot = path.resolve(provenanceArgument);
 const expectedCandidateHashes = {
   packageJson: '5ca7614266965857818d1ed51a8b03a188a79bc5d46eb2ec4968e20436dc387d',
   cmakeLists: 'ce42617e29160fac6583d6dfd33cfb4b52f086f9ff3e75c53e6bbc76bf12ad04',
+  androidGradle: '9f538c09461429c84f760502e217a6083a953e63d642baeb4c0fcca90de73f6b',
   nativeCpp: 'c085e128a3da4bd5cac6eb0b61efb34de065552100f76e999a3f1f339725fbb0',
   bundledBuildTgz: '3fbed06822bee4939f5091cc4d4706ac890039116e288cd15f913c63f9b577b3',
 };
@@ -25,6 +27,26 @@ const requireText = (text, expression, description) => {
 const requireHash = (actual, expected, description) => {
   if (actual !== expected) throw new Error(`react-native-libsodium@1.7.0 drift: ${description} SHA-256 changed`);
 };
+const prepareArm64OnlyGradle = (gradle) => {
+  const abiFilterLines = gradle.match(/^[ \t]*abiFilters\b.*$/gm) ?? [];
+  if (abiFilterLines.length !== 1) {
+    throw new Error('Candidate Android Gradle ABI filter changed; expected one known four-ABI declaration');
+  }
+  const knownDeclaration = abiFilterLines[0].match(/^([ \t]*)abiFilters "x86", "x86_64", "armeabi-v7a", "arm64-v8a"([ \t]*)$/);
+  if (!knownDeclaration) {
+    throw new Error('Candidate Android Gradle ABI filter changed; refusing an unknown declaration');
+  }
+  return gradle.replace(abiFilterLines[0], `${knownDeclaration[1]}abiFilters "arm64-v8a"${knownDeclaration[2]}`);
+};
+
+const checkGradlePreparationFixtures = () => {
+  const source = 'android {\n  defaultConfig {\n    abiFilters "x86", "x86_64", "armeabi-v7a", "arm64-v8a"\n  }\n}\n';
+  const expected = 'android {\n  defaultConfig {\n    abiFilters "arm64-v8a"\n  }\n}\n';
+  assert.equal(prepareArm64OnlyGradle(source), expected);
+  assert.throws(() => prepareArm64OnlyGradle(source.replace('"x86_64"', '"x86_64", "mips"')), /ABI filter changed/);
+  assert.throws(() => prepareArm64OnlyGradle(`${source}abiFilters "arm64-v8a"\n`), /ABI filter changed/);
+};
+checkGradlePreparationFixtures();
 
 const manifestPath = path.join(packageRoot, 'package.json');
 const manifestBytes = await readFile(manifestPath);
@@ -55,6 +77,10 @@ const cppPath = path.join(packageRoot, 'cpp', 'react-native-libsodium.cpp');
 const gradlePath = path.join(packageRoot, 'android', 'build.gradle');
 if (!(await exists(cppPath)) || !(await exists(gradlePath))) throw new Error('Candidate C++ or Android Gradle source is missing');
 requireHash(await digestFile(cppPath), expectedCandidateHashes.nativeCpp, 'native C++ binding');
+const gradleBytes = await readFile(gradlePath);
+const gradleSha256 = digest(gradleBytes);
+requireHash(gradleSha256, expectedCandidateHashes.androidGradle, 'Android build.gradle');
+const preparedGradle = prepareArm64OnlyGradle(gradleBytes.toString('utf8'));
 
 const sodiumRoot = path.join(packageRoot, 'libsodium');
 const bundledArchive = path.join(sodiumRoot, 'build.tgz');
@@ -95,6 +121,11 @@ await mkdir(destination, { recursive: false });
 await mkdir(path.join(destination, 'lib'));
 await copyFile(sourceLibrary, path.join(destination, 'lib', 'libsodium.so'));
 await cp(sourceInclude, path.join(destination, 'include'), { recursive: true, errorOnExist: true });
+await writeFile(gradlePath, preparedGradle);
+const preparedGradleBytes = await readFile(gradlePath);
+if (!preparedGradleBytes.toString('utf8').includes('abiFilters "arm64-v8a"')) {
+  throw new Error('Candidate Gradle ABI filter was not restricted to ARM64');
+}
 
 const installedLibrary = path.join(destination, 'lib', 'libsodium.so');
 if ((await digestFile(installedLibrary)) !== sourceSha256) throw new Error('Prepared candidate library differs from source build');
@@ -107,6 +138,9 @@ const provenance = {
     version: manifest.version,
     packageJsonSha256: digest(manifestBytes),
     cmakeListsSha256: digest(cmakeBytes),
+    androidGradleOriginalSha256: gradleSha256,
+    androidGradlePreparedSha256: digest(preparedGradleBytes),
+    androidGradleAbiFilters: ['arm64-v8a'],
     nativeCppSha256: await digestFile(cppPath),
     bundledBuildTgzSha256: archiveSha256,
     bundledBuildTgzDeletedWithoutExtraction: true,
