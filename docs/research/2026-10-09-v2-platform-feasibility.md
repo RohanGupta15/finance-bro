@@ -1,5 +1,10 @@
 # Finance Bro 2.0 platform feasibility
 
+Scope update (2026-10-10): 2.0 now includes Android SMS imports only. This
+historical research retains the broader proposal for later work; its iOS,
+Gmail, OCR, recovery and widget recommendations are not 2.0 release gates.
+Follow [the current roadmap](../v2-roadmap.md) for delivery scope and order.
+
 Researched 9 October 2026. This note recommends implementation paths and records platform limits that must shape the v2 roadmap. It uses current platform documentation and the existing product contract: local-only finance data, deterministic parsing, no durable raw message/receipt content, and no hosted financial AI ([PRODUCT.md](../../PRODUCT.md), [CLAUDE.md](../../CLAUDE.md)). Documentation establishes API behavior; device spikes below are still required before claiming delivery.
 
 Product priorities also reflect the [personal-finance benchmark](https://github.com/Starforge-lab/finance-bro/blob/docs/finance-benchmarks/docs/research/2026-10-07-personal-finance-benchmarks.md): treat documented competitor behavior as reference, not proof that a feature causes retention; preserve corrections and make full backup/restore a first-class reliability feature.
