@@ -17,6 +17,14 @@ The installed `expo-intent-launcher@58.0.3` bridge calls `toString()` on
 codes. Remove the patch when a compatible upstream release includes this fix.
 This changes native code: existing development clients must be rebuilt.
 
+The first rebuilt client (`c6db4d4`, APK run `37967460598`) passed cancellation
+but saving still returned an invalid destination. Its Gradle log linked
+`expo-intent-launcher` as a precompiled publication, so the source patch did not
+reach that binary. The application now opts just this module into
+`expo.autolinking.android.buildFromSource`. This is required for patched native
+source under SDK 58; a successful APK build alone did not prove the fix shipped.
+See [Expo's precompiled-module guidance](https://docs.expo.dev/guides/prebuilt-expo-modules/).
+
 The shared destination helper also rejects malformed or non-content destinations
 before any write or cleanup operation. Its regression test failed before the
 guard and passed after it. The patch is version-specific and recorded in the
