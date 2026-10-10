@@ -28,18 +28,35 @@ See [Expo's precompiled-module guidance](https://docs.expo.dev/guides/prebuilt-e
 The shared destination helper also rejects malformed or non-content destinations
 before any write or cleanup operation. Its regression test failed before the
 guard and passed after it. The patch is version-specific and recorded in the
-lockfile; no dependencies or build-script permissions were upgraded.
+lockfile. The patch keeps the launcher version and build-script permissions
+unchanged; the compatible SDK refresh from #74 is integrated separately.
 
-## Remaining physical check
+## Passed physical checks — 2026-10-10
 
-A rebuilt client must pass all three user-driven picker cases:
+Source `f94cf097c41b54225bc27533facbd380a0f35f21`, APK
+[run 38061188406](https://github.com/Starforge-lab/finance-bro/actions/runs/38061188406),
+SHA-256 `CA2F9259D7AE10997CDA893D2F2E73EAC007188BBBB63766D4A8BCD626AC0149`.
+The build log contains `:expo-intent-launcher:compileDebugKotlin`, demonstrating
+source compilation of the patched module. The APK was installed with a
+data-preserving replacement on the same Motorola Edge 60 Pro / Android 17.
+
+All three user-driven picker cases passed in the app-private QA report:
 
 1. Cancel: `saveCsv` returns `cancelled` without touching a document.
 2. Save: the single chosen document reads back the exact fictional CSV bytes.
 3. Injected write failure: only that incomplete document is removed, and the
-   original write error propagates. Provider refusal to delete must retain the
-   existing explicit cleanup-failure message.
+   original injected write error propagates unchanged.
 
-These cases remain unverified on the patched client. PR #66 stays draft until
-they pass; the earlier successful APK build and mocked tests do not prove them.
-iOS CSV export is a separate remaining gate.
+The user independently reported all three native checks passed. The retrieved
+report records that same source, `status: pass`, and all three named assertions.
+The retained temporary harness SHA-256 is
+`DFA508AE69B35C69F49297385EE7BE5BC65E41327BFF78AE8D154C36BC858333`.
+The report and harness were archived locally, then the QA app was stopped,
+the temporary route/script removed, and the owned development server stopped.
+No personal ledger or protected key was opened or cleared.
+
+Provider refusal to delete retains explicit cleanup-failure handling in source
+and automated tests; it was not reproduced against a refusing native provider.
+Failed earlier saves may have left picker-created fictional files in Downloads.
+iOS export, other document providers and full export performance remain open.
+These observations close the Android picker checks, not all of #15 or release gates.
